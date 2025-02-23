@@ -1,0 +1,46 @@
+version: "3.8"
+
+services:
+  backend:
+    build: ./backend
+    container_name: finanace-management-backend
+    ports:
+      - "8080:8080"
+    environment:
+      - DATABASE_URL=postgres://postgres:postgres@db:5432/finance-management
+    volumes:
+      - ./backend:/app
+    depends_on:
+      - db
+
+  analytics:
+    build: ./analytics
+    container_name: finanace-management-analytics
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./analytics:/app
+
+  frontend:
+    build: ./frontend
+    container_name: finanace-management-frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+
+  db:
+    image: postgres:latest
+    container_name: finanace-management-postgres
+    # restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: finance-management
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./docker/db/data:/var/lib/postgresql/data
