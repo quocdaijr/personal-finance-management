@@ -1,4 +1,3 @@
-```markdown
 # Comprehensive Personal Finance Management Project
 
 This project is a comprehensive personal finance management application aimed at providing a wide range of financial tools, including transaction tracking, budgeting, forecasting, investment management, debt management, tax planning, and more.
@@ -29,4 +28,3 @@ This project is a comprehensive personal finance management application aimed at
 
 ## Contributing
 Please check the [CONTRIBUTING.md](docs/CONTRIBUTING.md) for details on the project workflow.
-```
