@@ -1,8 +1,6 @@
 package services
 
 import (
-	"fmt"
-
 	"github.com/quocdaijr/finance-management-backend/internal/domain/models"
 	"github.com/quocdaijr/finance-management-backend/internal/repository"
 )

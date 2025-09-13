@@ -1,11 +1,12 @@
 package utils
 
 import (
+	"github.com/pquerna/otp"
 	"github.com/pquerna/otp/totp"
 )
 
 // GenerateTOTPSecret generates a new TOTP secret
-func GenerateTOTPSecret(username, issuer string) (*totp.Key, error) {
+func GenerateTOTPSecret(username, issuer string) (*otp.Key, error) {
 	// Generate a new TOTP key
 	key, err := totp.Generate(totp.GenerateOpts{
 		Issuer:      issuer,

@@ -1,7 +1,6 @@
 package services
 
 import (
-	"fmt"
 	"strings"
 	"time"
 
@@ -28,15 +27,8 @@ func NewTransactionService(
 
 // Create creates a new transaction
 func (s *TransactionService) Create(userID uint, req *models.TransactionRequest) (*models.Transaction, error) {
-	// Convert account ID from string to uint
-	var accountID uint
-	_, err := fmt.Sscanf(req.AccountID, "%d", &accountID)
-	if err != nil {
-		return nil, err
-	}
-
 	// Check if account exists and belongs to user
-	account, err := s.accountRepo.GetByID(accountID, userID)
+	account, err := s.accountRepo.GetByID(req.AccountID, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -91,15 +83,8 @@ func (s *TransactionService) Update(id uint, userID uint, req *models.Transactio
 		return nil, err
 	}
 
-	// Convert account ID from string to uint
-	var accountID uint
-	_, err = fmt.Sscanf(req.AccountID, "%d", &accountID)
-	if err != nil {
-		return nil, err
-	}
-
 	// Check if account exists and belongs to user
-	newAccount, err := s.accountRepo.GetByID(accountID, userID)
+	newAccount, err := s.accountRepo.GetByID(req.AccountID, userID)
 	if err != nil {
 		return nil, err
 	}

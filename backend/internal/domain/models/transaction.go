@@ -41,7 +41,7 @@ type TransactionRequest struct {
 	Category    string    `json:"category"`
 	Type        string    `json:"type" binding:"required,oneof=income expense"`
 	Date        time.Time `json:"date" binding:"required"`
-	AccountID   string    `json:"account_id" binding:"required"`
+	AccountID   uint      `json:"account_id" binding:"required"`
 	Tags        []string  `json:"tags"`
 }
 
