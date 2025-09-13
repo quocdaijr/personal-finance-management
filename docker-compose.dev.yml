@@ -1,0 +1,51 @@
+version: "3.8"
+
+# Development-focused compose file with simplified configurations
+services:
+  backend:
+    build: ./backend
+    container_name: finance-management-backend-dev
+    ports:
+      - "8080:8080"
+    environment:
+      - USE_SQLITE=true
+      - JWT_SECRET=dev-secret-key
+      - JWT_REFRESH_SECRET=dev-refresh-secret
+      - JWT_EXPIRY_HOURS=24
+      - APP_NAME=Finance Management Dev
+    volumes:
+      - ./backend:/app
+    restart: unless-stopped
+
+  analytics:
+    build: ./analytics
+    container_name: finance-management-analytics-dev
+    ports:
+      - "8000:8000"
+    environment:
+      - JWT_SECRET=dev-secret-key
+      - USE_SQLITE=true
+    volumes:
+      - ./analytics:/app
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: dockerfile.simple
+    container_name: finance-management-frontend-dev
+    ports:
+      - "3000:3000"
+      - "8097:8097"
+    depends_on:
+      - backend
+      - analytics
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - CHOKIDAR_USEPOLLING=true
+      - VITE_API_URL=http://localhost:8080
+      - VITE_ANALYTICS_URL=http://localhost:8000
+    restart: unless-stopped

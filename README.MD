@@ -33,30 +33,55 @@ This application follows a microservices architecture with the following compone
 
 ### Quick Start (Development)
 
+#### Option 1: Docker (Recommended)
+
 1. Clone the repository:
 ```bash
 git clone <repository-url>
 cd personal-finance-management
 ```
 
-2. Start the backend service:
+2. Test Docker setup:
+```bash
+./scripts/test-docker-setup.sh
+```
+
+3. Start all services with Docker:
+```bash
+# Development environment
+docker-compose -f docker-compose.dev.yml up
+
+# Or for production
+docker-compose -f docker-compose.prod.yml up
+```
+
+#### Option 2: Manual Setup
+
+1. Start the backend service:
 ```bash
 cd backend
 go mod tidy
 go run cmd/api/main.go
 ```
 
-3. Start the analytics service:
+2. Start the analytics service:
 ```bash
 cd analytics
 pip install -r requirements.txt
 python main.py
 ```
 
+3. Start the frontend:
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
 The application will be available at:
+- Frontend: http://localhost:3000
 - Backend API: http://localhost:8080
 - Analytics API: http://localhost:8000
-- Frontend: http://localhost:3000 (when started)
 
 ### Test the APIs
 
@@ -191,6 +216,28 @@ The system includes comprehensive test data and all endpoints have been validate
 - CRUD operations for all entities
 - Analytics endpoints provide real insights
 - Error handling and validation working properly
+
+### Automated Testing
+
+Run the test scripts to validate your setup:
+
+```bash
+# Test Docker configuration
+./scripts/test-docker-setup.sh
+
+# Test API integration
+./scripts/test-api-integration.sh
+```
+
+### Docker Testing
+
+```bash
+# Test development build
+docker-compose -f docker-compose.dev.yml up --build
+
+# Test production build
+docker-compose -f docker-compose.prod.yml up --build
+```
 
 ## Contributing
 
