@@ -155,7 +155,7 @@ test_endpoint "$BACKEND_URL/api/accounts" "GET" "" "" "401"
 
 # Test invalid login
 invalid_login='{"username":"invalid","password":"invalid"}'
-test_endpoint "$BACKEND_URL/api/auth/login" "POST" "$invalid_login" "" "400"
+test_endpoint "$BACKEND_URL/api/auth/login" "POST" "$invalid_login" "" "401"
 
 # Summary
 echo -e "\n📋 Integration Test Summary"

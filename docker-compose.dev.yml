@@ -32,7 +32,7 @@ services:
   frontend:
     build:
       context: ./frontend
-      dockerfile: dockerfile.simple
+      dockerfile: Dockerfile.simple
     container_name: finance-management-frontend-dev
     ports:
       - "3000:3000"

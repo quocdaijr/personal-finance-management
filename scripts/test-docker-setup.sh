@@ -60,7 +60,7 @@ check_port 5432 "PostgreSQL"
 echo -e "\n📄 Validating Docker Configuration Files..."
 
 # Check if Dockerfiles exist
-if [ -f "frontend/dockerfile" ]; then
+if [ -f "frontend/Dockerfile" ]; then
     print_status "Frontend Dockerfile exists" 0
 else
     print_status "Frontend Dockerfile missing" 1

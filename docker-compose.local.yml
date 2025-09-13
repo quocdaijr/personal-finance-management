@@ -24,7 +24,7 @@ services:
   frontend:
     build:
       context: ./frontend
-      dockerfile: dockerfile.simple  # Use simple dockerfile for better compatibility
+      dockerfile: Dockerfile.simple  # Use simple dockerfile for better compatibility
     container_name: finance-management-frontend
     ports:
       - "3000:3000"

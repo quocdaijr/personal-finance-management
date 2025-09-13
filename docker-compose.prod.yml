@@ -42,7 +42,7 @@ services:
   frontend:
     build:
       context: ./frontend
-      dockerfile: dockerfile  # Use full multi-stage dockerfile for production
+      dockerfile: Dockerfile  # Use full multi-stage dockerfile for production
       target: production
     container_name: finance-management-frontend-prod
     ports:

@@ -133,8 +133,8 @@ def get_transaction_trends(
                 "average_monthly_expenses": 0
             }
 
-        # Convert date column to datetime
-        transactions_df['date'] = pd.to_datetime(transactions_df['date'])
+        # Convert date column to datetime with flexible parsing
+        transactions_df['date'] = pd.to_datetime(transactions_df['date'], format='mixed', errors='coerce')
 
         # Group by month and calculate totals
         transactions_df['month'] = transactions_df['date'].dt.to_period('M')
