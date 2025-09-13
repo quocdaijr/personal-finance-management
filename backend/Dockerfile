@@ -13,7 +13,6 @@ RUN apk add --no-cache \
 
 # Copy only go.mod first for better caching
 COPY go.mod ./
-COPY .env ./
 RUN go mod download
 
 # Install development tools
