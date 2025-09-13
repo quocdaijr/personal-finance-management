@@ -24,7 +24,7 @@ services:
   frontend:
     build:
       context: ./frontend
-      target: development
+      dockerfile: dockerfile.simple  # Use simple dockerfile for better compatibility
     container_name: finance-management-frontend
     ports:
       - "3000:3000"
@@ -37,6 +37,14 @@ services:
     environment:
       - NODE_ENV=development
       - CHOKIDAR_USEPOLLING=true  # Enable file watching in Docker
+      - VITE_API_URL=http://localhost:8080
+      - VITE_ANALYTICS_URL=http://localhost:8000
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
   db:
     image: postgres:latest

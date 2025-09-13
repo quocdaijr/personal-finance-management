@@ -1,0 +1,18 @@
+# Ultra-minimal Dockerfile for environments with severe Docker limitations
+# This version avoids RUN commands that might trigger overlay filesystem issues
+FROM node:22-alpine
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Copy source code
+COPY . .
+
+# Expose ports
+EXPOSE 3000 8097
+
+# Start development server
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "3000"]

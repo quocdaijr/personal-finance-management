@@ -42,6 +42,7 @@ services:
   frontend:
     build:
       context: ./frontend
+      dockerfile: dockerfile  # Use full multi-stage dockerfile for production
       target: production
     container_name: finance-management-frontend-prod
     ports:
@@ -49,6 +50,14 @@ services:
     depends_on:
       - backend
       - analytics
+    environment:
+      - NODE_ENV=production
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
     restart: unless-stopped
 
   db:
