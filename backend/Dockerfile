@@ -1,5 +1,5 @@
- # Start from the official Golang image as the builder
-FROM golang:1.24-alpine
+# Start from the official Golang image as the builder
+FROM golang:1.23-alpine
 
 WORKDIR /app
 
@@ -16,7 +16,7 @@ COPY go.mod ./
 RUN go mod download
 
 # Install development tools
-RUN go install github.com/air-verse/air@latest \
+RUN go install github.com/air-verse/air@v1.52.3 \
     && go install github.com/go-delve/delve/cmd/dlv@latest
 
 COPY .air.toml ./
