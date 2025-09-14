@@ -32,20 +32,29 @@ services:
   frontend:
     build:
       context: ./frontend
-      dockerfile: Dockerfile.simple
+      dockerfile: Dockerfile
+      target: development-volume  # Use optimized stage for volume mounting
     container_name: finance-management-frontend-dev
     ports:
       - "3000:3000"
-      - "8097:8097"
+      - "8097:8097"  # React DevTools port
     depends_on:
       - backend
       - analytics
     volumes:
       - ./frontend:/app
-      - /app/node_modules
+      - /app/node_modules  # Anonymous volume for node_modules
+      - /app/dist  # Anonymous volume for build artifacts
     environment:
       - NODE_ENV=development
       - CHOKIDAR_USEPOLLING=true
       - VITE_API_URL=http://localhost:8080
       - VITE_ANALYTICS_URL=http://localhost:8000
+      - VITE_HMR_PORT=8097
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
     restart: unless-stopped
