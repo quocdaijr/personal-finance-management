@@ -34,7 +34,7 @@ COPY --chown=reactuser:nodejs package*.json ./
 
 # Install dependencies with optimized strategy
 # Use npm ci for faster, deterministic builds
-RUN npm ci --prefer-offline --no-audit --no-fund && \
+RUN npm ci --prefer-offline --no-audit --no-fund --silent && \
     npm cache clean --force
 
 # Copy source code (when not using volume mounting)
@@ -85,7 +85,7 @@ COPY --chown=builduser:nodejs package*.json ./
 
 # Install all dependencies including devDependencies for build
 # Use npm ci for deterministic builds
-RUN npm ci --include=dev --prefer-offline --no-audit --no-fund && \
+RUN npm ci --include=dev --prefer-offline --no-audit --no-fund --silent && \
     npm cache clean --force
 
 # Copy source code for build
@@ -94,6 +94,7 @@ COPY --chown=builduser:nodejs . .
 # Set production environment and build optimizations
 ENV NODE_ENV=production
 ENV VITE_BUILD_TARGET=production
+ENV NODE_OPTIONS="--max-old-space-size=4096"
 
 # Build the application with Vite optimizations
 RUN npm run build && \
@@ -170,12 +171,12 @@ FROM development AS development-volume
 # It skips copying source code since it will be mounted as a volume
 # Copy only package files and install dependencies
 COPY --chown=reactuser:nodejs package*.json ./
-RUN npm ci --prefer-offline --no-audit --no-fund && \
+RUN npm ci --prefer-offline --no-audit --no-fund --silent && \
     npm cache clean --force
 
 # Create placeholder directories for volume mounting
-RUN mkdir -p src public && \
-    chown -R reactuser:nodejs src public
+RUN mkdir -p src public dist .vite && \
+    chown -R reactuser:nodejs src public dist .vite
 
 # Use tini for proper signal handling
 ENTRYPOINT ["tini", "--"]
