@@ -19,8 +19,11 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
 import transactionService from '../../services/transactionService';
 import budgetService from '../../services/budgetService';
+import { useUserPreferences } from '../../contexts/UserPreferencesContext';
+import { getCurrencySymbol } from '../../utils/formatters';
 
 const BudgetForm = ({ open, onClose, onSave, budget = null, isEditing = false }) => {
+  const { preferences } = useUserPreferences();
   const [formData, setFormData] = useState({
     name: '',
     amount: '',
@@ -121,18 +124,24 @@ const BudgetForm = ({ open, onClose, onSave, budget = null, isEditing = false })
   // Handle form submission
   const handleSubmit = (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
-    
+
     // Prepare data for saving
+    // httpClient will automatically convert camelCase to snake_case
     const budgetData = {
-      ...formData,
+      name: formData.name,
       amount: parseFloat(formData.amount),
-      spent: parseFloat(formData.spent)
+      spent: parseFloat(formData.spent),
+      category: formData.category,
+      period: formData.period,
+      startDate: formData.startDate instanceof Date
+        ? formData.startDate.toISOString()
+        : new Date(formData.startDate).toISOString()
     };
-    
+
     onSave(budgetData);
   };
 
@@ -171,11 +180,11 @@ const BudgetForm = ({ open, onClose, onSave, budget = null, isEditing = false })
                 error={!!errors.amount}
                 helperText={errors.amount}
                 InputProps={{
-                  startAdornment: <InputAdornment position="start">$</InputAdornment>,
+                  startAdornment: <InputAdornment position="start">{getCurrencySymbol(preferences.currency)}</InputAdornment>,
                 }}
               />
             </Grid>
-            
+
             {isEditing && (
               <Grid item xs={12} sm={6}>
                 <TextField
@@ -188,7 +197,7 @@ const BudgetForm = ({ open, onClose, onSave, budget = null, isEditing = false })
                   value={formData.spent}
                   onChange={handleChange}
                   InputProps={{
-                    startAdornment: <InputAdornment position="start">$</InputAdornment>,
+                    startAdornment: <InputAdornment position="start">{getCurrencySymbol(preferences.currency)}</InputAdornment>,
                   }}
                 />
               </Grid>

@@ -18,8 +18,11 @@ import {
   Switch
 } from '@mui/material';
 import accountService from '../../services/accountService';
+import { useUserPreferences } from '../../contexts/UserPreferencesContext';
+import { getCurrencySymbol } from '../../utils/formatters';
 
 const AccountForm = ({ open, onClose, onSave, account = null, isEditing = false }) => {
+  const { preferences } = useUserPreferences();
   const [formData, setFormData] = useState({
     name: '',
     type: 'checking',
@@ -172,7 +175,7 @@ const AccountForm = ({ open, onClose, onSave, account = null, isEditing = false 
                 error={!!errors.balance}
                 helperText={errors.balance}
                 InputProps={{
-                  startAdornment: <InputAdornment position="start">$</InputAdornment>,
+                  startAdornment: <InputAdornment position="start">{getCurrencySymbol(preferences.currency)}</InputAdornment>,
                 }}
               />
             </Grid>

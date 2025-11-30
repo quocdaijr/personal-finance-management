@@ -21,8 +21,11 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
 import transactionService from '../../services/transactionService';
 import accountService from '../../services/accountService';
+import { useUserPreferences } from '../../contexts/UserPreferencesContext';
+import { getCurrencySymbol } from '../../utils/formatters';
 
 const TransactionForm = ({ open, onClose, onSave, transaction = null, isEditing = false }) => {
+  const { preferences } = useUserPreferences();
   const [formData, setFormData] = useState({
     amount: '',
     description: '',
@@ -217,7 +220,7 @@ const TransactionForm = ({ open, onClose, onSave, transaction = null, isEditing 
                 error={!!errors.amount}
                 helperText={errors.amount}
                 InputProps={{
-                  startAdornment: <InputAdornment position="start">$</InputAdornment>,
+                  startAdornment: <InputAdornment position="start">{getCurrencySymbol(preferences.currency)}</InputAdornment>,
                 }}
               />
             </Grid>
