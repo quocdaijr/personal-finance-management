@@ -8,9 +8,10 @@ class Account {
     this.type = data.type || 'checking'; // checking, savings, credit, investment
     this.balance = data.balance || 0;
     this.currency = data.currency || 'USD';
-    this.isDefault = data.isDefault || false;
-    this.createdAt = data.createdAt || new Date().toISOString();
-    this.updatedAt = data.updatedAt || new Date().toISOString();
+    // Handle both camelCase (frontend) and snake_case (backend API) formats
+    this.isDefault = data.isDefault || data.is_default || false;
+    this.createdAt = data.createdAt || data.created_at || new Date().toISOString();
+    this.updatedAt = data.updatedAt || data.updated_at || new Date().toISOString();
   }
 
   // Helper method to format balance with currency symbol

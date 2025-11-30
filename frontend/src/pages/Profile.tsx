@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Container, 
-  Box, 
-  Typography, 
-  TextField, 
-  Button, 
-  Alert, 
+import {
+  Container,
+  Box,
+  Typography,
+  TextField,
+  Button,
+  Alert,
   Paper,
   Grid,
   Tabs,
@@ -18,12 +18,20 @@ import {
   DialogContent,
   DialogContentText,
   DialogTitle,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  SelectChangeEvent,
 } from '@mui/material';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
+import { useUserPreferences } from '../contexts/UserPreferencesContext';
 import { PageLayout } from '../components/layout';
-import axios from 'axios';
+import httpClient from '../services/httpClient';
+import LanguageSelector from '../components/LanguageSelector';
+import { SUPPORTED_CURRENCIES, SUPPORTED_DATE_FORMATS, CurrencyCode, DateFormatType, formatCurrency, formatDate } from '../utils/formatters';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -54,6 +62,7 @@ function TabPanel(props: TabPanelProps) {
 const Profile: React.FC = () => {
   const { user, logout } = useAuth();
   const { theme } = useTheme();
+  const { preferences, updatePreferences } = useUserPreferences();
   const [tabValue, setTabValue] = useState(0);
   const [profileData, setProfileData] = useState({
     firstName: user?.first_name || '',
@@ -102,16 +111,16 @@ const Profile: React.FC = () => {
     setLoading(true);
     setError(null);
     setSuccess(null);
-    
+
     try {
-      await axios.put('/api/profile', {
+      await httpClient.backend.put('/profile', {
         first_name: profileData.firstName,
         last_name: profileData.lastName,
       });
-      
+
       setSuccess('Profile updated successfully');
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to update profile');
+      setError(err.response?.data?.error || err.message || 'Failed to update profile');
     } finally {
       setLoading(false);
     }
@@ -119,30 +128,31 @@ const Profile: React.FC = () => {
 
   const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Validate passwords
     if (passwordData.newPassword !== passwordData.confirmPassword) {
       setError('New passwords do not match');
       return;
     }
-    
+
     if (passwordData.newPassword.length < 8) {
       setError('New password must be at least 8 characters');
       return;
     }
-    
+
     setLoading(true);
     setError(null);
     setSuccess(null);
-    
+
     try {
-      await axios.put('/api/profile/password', {
+      // Use correct backend endpoint: /auth/change-password
+      await httpClient.backend.post('/auth/change-password', {
         old_password: passwordData.oldPassword,
         new_password: passwordData.newPassword,
       });
-      
+
       setSuccess('Password updated successfully');
-      
+
       // Reset form
       setPasswordData({
         oldPassword: '',
@@ -150,7 +160,7 @@ const Profile: React.FC = () => {
         confirmPassword: '',
       });
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to update password');
+      setError(err.response?.data?.error || err.message || 'Failed to update password');
     } finally {
       setLoading(false);
     }
@@ -159,13 +169,14 @@ const Profile: React.FC = () => {
   const setupTwoFactor = async () => {
     setLoading(true);
     setError(null);
-    
+
     try {
-      const response = await axios.post('/api/profile/2fa/setup');
-      setTwoFactorData(response.data);
+      // Use correct backend endpoint: /auth/setup-2fa
+      const response = await httpClient.backend.post('/auth/setup-2fa', {});
+      setTwoFactorData(response);
       setShowTwoFactorDialog(true);
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to setup two-factor authentication');
+      setError(err.response?.data?.error || err.message || 'Failed to setup two-factor authentication');
     } finally {
       setLoading(false);
     }
@@ -174,19 +185,20 @@ const Profile: React.FC = () => {
   const verifyTwoFactor = async () => {
     setLoading(true);
     setError(null);
-    
+
     try {
-      await axios.post('/api/profile/2fa/verify', {
+      // Use correct backend endpoint: /auth/verify-2fa
+      await httpClient.backend.post('/auth/verify-2fa', {
         token: twoFactorToken,
       });
-      
+
       setSuccess('Two-factor authentication enabled successfully');
       setShowTwoFactorDialog(false);
-      
+
       // Force a page reload to update the user data
       window.location.reload();
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to verify token');
+      setError(err.response?.data?.error || err.message || 'Failed to verify token');
     } finally {
       setLoading(false);
     }
@@ -195,17 +207,18 @@ const Profile: React.FC = () => {
   const disableTwoFactor = async () => {
     setLoading(true);
     setError(null);
-    
+
     try {
-      await axios.delete('/api/profile/2fa');
-      
+      // Use correct backend endpoint: /auth/disable-2fa
+      await httpClient.backend.post('/auth/disable-2fa', {});
+
       setSuccess('Two-factor authentication disabled successfully');
       setDisableTwoFactorDialog(false);
-      
+
       // Force a page reload to update the user data
       window.location.reload();
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to disable two-factor authentication');
+      setError(err.response?.data?.error || err.message || 'Failed to disable two-factor authentication');
     } finally {
       setLoading(false);
     }
@@ -232,14 +245,15 @@ const Profile: React.FC = () => {
           }}
         >
           <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-            <Tabs 
-              value={tabValue} 
-              onChange={handleTabChange} 
+            <Tabs
+              value={tabValue}
+              onChange={handleTabChange}
               aria-label="profile tabs"
               centered
             >
               <Tab label="Profile" />
               <Tab label="Security" />
+              <Tab label="Preferences" />
             </Tabs>
           </Box>
           
@@ -440,6 +454,106 @@ const Profile: React.FC = () => {
                 </Button>
               </>
             )}
+          </TabPanel>
+
+          <TabPanel value={tabValue} index={2}>
+            <Typography variant="h6" gutterBottom>
+              Preferences
+            </Typography>
+
+            <Typography variant="body2" paragraph>
+              Customize your application experience with language, currency, and date format preferences.
+            </Typography>
+
+            <Grid container spacing={3}>
+              {/* Language Selector */}
+              <Grid item xs={12} sm={6}>
+                <LanguageSelector fullWidth />
+              </Grid>
+
+              {/* Currency Selector */}
+              <Grid item xs={12} sm={6}>
+                <FormControl fullWidth variant="outlined">
+                  <InputLabel id="currency-selector-label">Currency</InputLabel>
+                  <Select
+                    labelId="currency-selector-label"
+                    id="currency-selector"
+                    value={preferences.currency}
+                    onChange={(e: SelectChangeEvent<string>) => {
+                      updatePreferences({ currency: e.target.value as CurrencyCode });
+                    }}
+                    label="Currency"
+                  >
+                    {Object.entries(SUPPORTED_CURRENCIES).map(([code, { symbol, name }]) => (
+                      <MenuItem key={code} value={code}>
+                        <Box display="flex" alignItems="center" gap={1}>
+                          <Typography>{symbol}</Typography>
+                          <Typography>{code} - {name}</Typography>
+                        </Box>
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+
+              {/* Date Format Selector */}
+              <Grid item xs={12} sm={6}>
+                <FormControl fullWidth variant="outlined">
+                  <InputLabel id="date-format-selector-label">Date Format</InputLabel>
+                  <Select
+                    labelId="date-format-selector-label"
+                    id="date-format-selector"
+                    value={preferences.dateFormat}
+                    onChange={(e: SelectChangeEvent<string>) => {
+                      updatePreferences({ dateFormat: e.target.value as DateFormatType });
+                    }}
+                    label="Date Format"
+                  >
+                    {Object.entries(SUPPORTED_DATE_FORMATS).map(([format, { name, example }]) => (
+                      <MenuItem key={format} value={format}>
+                        <Box display="flex" flexDirection="column">
+                          <Typography>{name}</Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            Example: {example}
+                          </Typography>
+                        </Box>
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+            </Grid>
+
+            {/* Live Preview */}
+            <Box sx={{ mt: 4 }}>
+              <Typography variant="h6" gutterBottom>
+                Preview
+              </Typography>
+              <Paper variant="outlined" sx={{ p: 2 }}>
+                <Grid container spacing={2}>
+                  <Grid item xs={12} sm={6}>
+                    <Typography variant="body2" color="text.secondary">
+                      Currency Format:
+                    </Typography>
+                    <Typography variant="h6">
+                      {formatCurrency(1234.56, preferences.currency)}
+                    </Typography>
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <Typography variant="body2" color="text.secondary">
+                      Date Format:
+                    </Typography>
+                    <Typography variant="h6">
+                      {formatDate(new Date(), preferences.dateFormat)}
+                    </Typography>
+                  </Grid>
+                </Grid>
+              </Paper>
+            </Box>
+
+            <Alert severity="success" sx={{ mt: 3 }}>
+              Your preferences are automatically saved and will be applied across all pages.
+            </Alert>
           </TabPanel>
         </Paper>
       </Box>

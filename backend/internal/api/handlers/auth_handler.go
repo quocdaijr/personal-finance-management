@@ -177,8 +177,11 @@ func (h *AuthHandler) UpdateProfile(c *gin.Context) {
 
 	// Parse the request
 	var req struct {
-		FirstName string `json:"first_name"`
-		LastName  string `json:"last_name"`
+		FirstName         string `json:"first_name"`
+		LastName          string `json:"last_name"`
+		PreferredCurrency string `json:"preferred_currency"`
+		DateFormat        string `json:"date_format"`
+		PreferredLanguage string `json:"preferred_language"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -186,11 +189,79 @@ func (h *AuthHandler) UpdateProfile(c *gin.Context) {
 	}
 
 	// Update the user
-	user, err := h.authService.UpdateUser(userID.(uint), req.FirstName, req.LastName)
+	user, err := h.authService.UpdateUser(userID.(uint), req.FirstName, req.LastName, req.PreferredCurrency, req.DateFormat, req.PreferredLanguage)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
 	c.JSON(http.StatusOK, user)
+}
+
+// ForgotPassword handles the forgot password request
+func (h *AuthHandler) ForgotPassword(c *gin.Context) {
+	var req models.ForgotPasswordRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	response, err := h.authService.ForgotPassword(&req)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, response)
+}
+
+// ResetPassword handles the password reset request
+func (h *AuthHandler) ResetPassword(c *gin.Context) {
+	var req models.ResetPasswordRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	response, err := h.authService.ResetPassword(&req)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, response)
+}
+
+// VerifyEmail handles email verification
+func (h *AuthHandler) VerifyEmail(c *gin.Context) {
+	var req models.VerifyEmailRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	response, err := h.authService.VerifyEmail(&req)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, response)
+}
+
+// ResendVerification handles resending the verification email
+func (h *AuthHandler) ResendVerification(c *gin.Context) {
+	var req models.ResendVerificationRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	response, err := h.authService.ResendVerificationEmail(&req)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, response)
 }

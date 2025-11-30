@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Box, 
-  Container, 
-  Typography, 
+import {
+  Box,
+  Container,
+  Typography,
   Button,
   Grid,
   Paper,
@@ -27,9 +27,14 @@ import accountService from '../services/accountService';
 
 // Import contexts
 import { useTheme } from '../contexts/ThemeContext';
+import { useUserPreferences } from '../contexts/UserPreferencesContext';
+
+// Import utilities
+import { formatCurrency as formatCurrencyUtil, formatDate as formatDateUtil } from '../utils/formatters';
 
 const Accounts = () => {
   const { theme } = useTheme();
+  const { preferences } = useUserPreferences();
 
   // State for data
   const [accounts, setAccounts] = useState([]);
@@ -81,12 +86,14 @@ const Accounts = () => {
     }
   };
   
-  // Format currency
+  // Format currency using user preferences
   const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(amount);
+    return formatCurrencyUtil(amount, preferences.currency);
+  };
+
+  // Format date using user preferences
+  const formatDate = (date) => {
+    return formatDateUtil(date, preferences.dateFormat);
   };
   
   // Handle account form open
@@ -279,103 +286,101 @@ const Accounts = () => {
       maxWidth="xl"
       showSearch={false}
     >
-
-        {/* Action Button */}
-        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 3 }}>
-          <Button
-            variant="contained"
+      {/* Action Button */}
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 3 }}>
+        <Button
+          variant="contained"
+          startIcon={<AddIcon />}
+          onClick={handleAddAccount}
+          sx={{
+            borderRadius: 2,
+            px: 3,
+            py: 1.5,
+            textTransform: 'none',
+            fontWeight: 600
+          }}
+        >
+          Add Account
+        </Button>
+      </Box>
+      
+      {/* Financial summary */}
+      <Paper sx={{ p: 3, mb: 4 }}>
+        <Grid container spacing={3}>
+          <Grid item xs={12} sm={6} md={3}>
+            <Typography variant="subtitle2" color="text.secondary">
+              Total Accounts
+            </Typography>
+            <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
+              {accountSummary.totalAccounts}
+            </Typography>
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <Typography variant="subtitle2" color="text.secondary">
+              Total Assets
+            </Typography>
+            <Typography variant="h5" sx={{ fontWeight: 'bold', color: 'success.main' }}>
+              {formatCurrency(accountSummary.totalAssets)}
+            </Typography>
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <Typography variant="subtitle2" color="text.secondary">
+              Total Liabilities
+            </Typography>
+            <Typography variant="h5" sx={{ fontWeight: 'bold', color: 'error.main' }}>
+              {formatCurrency(accountSummary.totalLiabilities)}
+            </Typography>
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <Typography variant="subtitle2" color="text.secondary">
+              Net Worth
+            </Typography>
+            <Typography 
+              variant="h5" 
+              sx={{ 
+                fontWeight: 'bold',
+                color: accountSummary.netWorth >= 0 ? 'success.main' : 'error.main'
+              }}
+            >
+              {formatCurrency(accountSummary.netWorth)}
+            </Typography>
+          </Grid>
+        </Grid>
+      </Paper>
+      
+      {/* Accounts grid */}
+      {accounts.length === 0 ? (
+        <Paper sx={{ p: 4, textAlign: 'center' }}>
+          <Typography variant="h6" color="text.secondary" gutterBottom>
+            No accounts found
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Add your first account to get started tracking your finances.
+          </Typography>
+          <Button 
+            variant="contained" 
             startIcon={<AddIcon />}
+            sx={{ mt: 2 }} 
             onClick={handleAddAccount}
-            sx={{
-              borderRadius: 2,
-              px: 3,
-              py: 1.5,
-              textTransform: 'none',
-              fontWeight: 600
-            }}
           >
             Add Account
           </Button>
-        </Box>
-        
-        {/* Financial summary */}
-        <Paper sx={{ p: 3, mb: 4 }}>
-          <Grid container spacing={3}>
-            <Grid item xs={12} sm={6} md={3}>
-              <Typography variant="subtitle2" color="text.secondary">
-                Total Accounts
-              </Typography>
-              <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
-                {accountSummary.totalAccounts}
-              </Typography>
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
-              <Typography variant="subtitle2" color="text.secondary">
-                Total Assets
-              </Typography>
-              <Typography variant="h5" sx={{ fontWeight: 'bold', color: 'success.main' }}>
-                {formatCurrency(accountSummary.totalAssets)}
-              </Typography>
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
-              <Typography variant="subtitle2" color="text.secondary">
-                Total Liabilities
-              </Typography>
-              <Typography variant="h5" sx={{ fontWeight: 'bold', color: 'error.main' }}>
-                {formatCurrency(accountSummary.totalLiabilities)}
-              </Typography>
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
-              <Typography variant="subtitle2" color="text.secondary">
-                Net Worth
-              </Typography>
-              <Typography 
-                variant="h5" 
-                sx={{ 
-                  fontWeight: 'bold',
-                  color: accountSummary.netWorth >= 0 ? 'success.main' : 'error.main'
-                }}
-              >
-                {formatCurrency(accountSummary.netWorth)}
-              </Typography>
-            </Grid>
-          </Grid>
         </Paper>
-        
-        {/* Accounts grid */}
-        {accounts.length === 0 ? (
-          <Paper sx={{ p: 4, textAlign: 'center' }}>
-            <Typography variant="h6" color="text.secondary" gutterBottom>
-              No accounts found
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Add your first account to get started tracking your finances.
-            </Typography>
-            <Button 
-              variant="contained" 
-              startIcon={<AddIcon />}
-              sx={{ mt: 2 }} 
-              onClick={handleAddAccount}
-            >
-              Add Account
-            </Button>
-          </Paper>
-        ) : (
-          <Grid container spacing={3}>
-            {accounts.map(account => (
-              <Grid item xs={12} sm={6} md={4} key={account.id}>
-                <AccountCard 
-                  account={account}
-                  onEdit={handleEditAccount}
-                  onDelete={handleDeleteDialogOpen}
-                  onSetDefault={handleSetDefaultAccount}
-                />
-              </Grid>
-            ))}
-          </Grid>
-        )}
-      </Box>
-      
+      ) : (
+        <Grid container spacing={3}>
+          {accounts.map(account => (
+            <Grid item xs={12} sm={6} md={4} key={account.id}>
+              <AccountCard 
+                account={account}
+                onEdit={handleEditAccount}
+                onDelete={handleDeleteDialogOpen}
+                onSetDefault={handleSetDefaultAccount}
+              />
+            </Grid>
+          ))}
+        </Grid>
+      )}
+
       {/* Account form dialog */}
       <AccountForm 
         open={accountFormOpen}

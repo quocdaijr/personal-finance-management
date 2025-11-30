@@ -1,6 +1,7 @@
 package models
 
 import (
+	"strconv"
 	"time"
 )
 
@@ -55,7 +56,7 @@ type AccountSummary struct {
 // ToResponse converts an Account to an AccountResponse
 func (a *Account) ToResponse() *AccountResponse {
 	return &AccountResponse{
-		ID:        string(a.ID),
+		ID:        strconv.FormatUint(uint64(a.ID), 10),
 		Name:      a.Name,
 		Type:      a.Type,
 		Balance:   a.Balance,

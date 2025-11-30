@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Typography,
@@ -13,6 +13,14 @@ import {
   Button,
   Switch,
   FormControlLabel,
+  Paper,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
+  CircularProgress,
+  Chip,
+  ClickAwayListener,
 } from '@mui/material';
 import {
   Search,
@@ -24,11 +32,17 @@ import {
   Help,
   DarkMode,
   LightMode,
+  Receipt,
+  AccountBalanceWallet,
+  PieChart,
+  Flag,
 } from '@mui/icons-material';
 import { alpha } from '@mui/material/styles';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useNavigate } from 'react-router-dom';
+import { NotificationCenter } from '../notifications';
+import searchService from '../../services/searchService';
 
 interface TopBarProps {
   title?: string;
@@ -46,12 +60,53 @@ const TopBar: React.FC<TopBarProps> = ({
   const navigate = useNavigate();
   const [searchValue, setSearchValue] = useState('');
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const [notificationAnchor, setNotificationAnchor] = useState<null | HTMLElement>(null);
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [showSearchResults, setShowSearchResults] = useState(false);
+
+  // Debounced search
+  useEffect(() => {
+    const timer = setTimeout(async () => {
+      if (searchValue.length >= 2) {
+        setSearchLoading(true);
+        try {
+          const result = await searchService.search(searchValue, 10);
+          setSearchResults(result?.results || []);
+          setShowSearchResults(true);
+        } catch {
+          setSearchResults([]);
+        } finally {
+          setSearchLoading(false);
+        }
+      } else {
+        setSearchResults([]);
+        setShowSearchResults(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchValue]);
 
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const value = event.target.value;
     setSearchValue(value);
     onSearchChange?.(value);
+  };
+
+  const handleSearchResultClick = (result: any) => {
+    navigate(result.url);
+    setSearchValue('');
+    setShowSearchResults(false);
+  };
+
+  const getResultIcon = (type: string) => {
+    switch (type) {
+      case 'transaction': return <Receipt fontSize="small" />;
+      case 'account': return <AccountBalanceWallet fontSize="small" />;
+      case 'budget': return <PieChart fontSize="small" />;
+      case 'goal': return <Flag fontSize="small" />;
+      default: return <Search fontSize="small" />;
+    }
   };
 
   const handleProfileMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
@@ -60,14 +115,6 @@ const TopBar: React.FC<TopBarProps> = ({
 
   const handleProfileMenuClose = () => {
     setAnchorEl(null);
-  };
-
-  const handleNotificationMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
-    setNotificationAnchor(event.currentTarget);
-  };
-
-  const handleNotificationMenuClose = () => {
-    setNotificationAnchor(null);
   };
 
   const handleLogout = () => {
@@ -140,49 +187,94 @@ const TopBar: React.FC<TopBarProps> = ({
 
       {/* Right Section - Search, Icons, and Profile */}
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-        {/* Search Bar */}
+        {/* Search Bar with Results */}
         {showSearch && (
-          <Box sx={{ display: { xs: 'none', md: 'block' } }}>
-            <TextField
-              size="small"
-              placeholder="Search..."
-              value={searchValue}
-              onChange={handleSearchChange}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <Search sx={{ color: theme.text.secondary, fontSize: 20 }} />
-                  </InputAdornment>
-                ),
-              }}
-              sx={{
-                width: 280,
-                '& .MuiOutlinedInput-root': {
-                  backgroundColor: theme.background.secondary,
-                  borderRadius: 2,
-                  border: `1px solid ${theme.border.primary}`,
-                  '&:hover': {
-                    border: `1px solid ${theme.border.secondary}`,
+          <ClickAwayListener onClickAway={() => setShowSearchResults(false)}>
+            <Box sx={{ display: { xs: 'none', md: 'block' }, position: 'relative' }}>
+              <TextField
+                size="small"
+                placeholder="Search transactions, accounts..."
+                value={searchValue}
+                onChange={handleSearchChange}
+                onFocus={() => searchResults.length > 0 && setShowSearchResults(true)}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      {searchLoading ? (
+                        <CircularProgress size={16} />
+                      ) : (
+                        <Search sx={{ color: theme.text.secondary, fontSize: 20 }} />
+                      )}
+                    </InputAdornment>
+                  ),
+                }}
+                sx={{
+                  width: 320,
+                  '& .MuiOutlinedInput-root': {
+                    backgroundColor: theme.background.secondary,
+                    borderRadius: 2,
+                    border: `1px solid ${theme.border.primary}`,
+                    '&:hover': {
+                      border: `1px solid ${theme.border.secondary}`,
+                    },
+                    '&.Mui-focused': {
+                      border: `1px solid #C8EE44`,
+                      boxShadow: `0 0 0 2px ${alpha('#C8EE44', 0.2)}`,
+                    },
+                    '& fieldset': {
+                      border: 'none',
+                    },
                   },
-                  '&.Mui-focused': {
-                    border: `1px solid #C8EE44`,
-                    boxShadow: `0 0 0 2px ${alpha('#C8EE44', 0.2)}`,
+                  '& .MuiInputBase-input': {
+                    color: theme.text.primary,
+                    fontSize: '0.875rem',
+                    '&::placeholder': {
+                      color: theme.text.secondary,
+                      opacity: 1,
+                    },
                   },
-                  '& fieldset': {
-                    border: 'none',
-                  },
-                },
-                '& .MuiInputBase-input': {
-                  color: theme.text.primary,
-                  fontSize: '0.875rem',
-                  '&::placeholder': {
-                    color: theme.text.secondary,
-                    opacity: 1,
-                  },
-                },
-              }}
-            />
-          </Box>
+                }}
+              />
+              {/* Search Results Dropdown */}
+              {showSearchResults && searchResults.length > 0 && (
+                <Paper
+                  sx={{
+                    position: 'absolute',
+                    top: '100%',
+                    left: 0,
+                    right: 0,
+                    mt: 1,
+                    maxHeight: 400,
+                    overflow: 'auto',
+                    zIndex: 1200,
+                    background: theme.card.background,
+                    border: `1px solid ${theme.card.border}`,
+                  }}
+                >
+                  <List dense>
+                    {searchResults.map((result, idx) => (
+                      <ListItem
+                        key={`${result.type}-${result.id}-${idx}`}
+                        onClick={() => handleSearchResultClick(result)}
+                        sx={{ cursor: 'pointer', '&:hover': { bgcolor: 'action.hover' } }}
+                      >
+                        <ListItemIcon sx={{ minWidth: 36 }}>
+                          {getResultIcon(result.type)}
+                        </ListItemIcon>
+                        <ListItemText
+                          primary={result.title}
+                          secondary={result.description}
+                          primaryTypographyProps={{ variant: 'body2', fontWeight: 500 }}
+                          secondaryTypographyProps={{ variant: 'caption' }}
+                        />
+                        <Chip label={result.type} size="small" sx={{ fontSize: 10, height: 20 }} />
+                      </ListItem>
+                    ))}
+                  </List>
+                </Paper>
+              )}
+            </Box>
+          </ClickAwayListener>
         )}
 
         {/* Icons Section */}
@@ -216,19 +308,7 @@ const TopBar: React.FC<TopBarProps> = ({
           </IconButton>
 
           {/* Notifications */}
-          <IconButton
-            onClick={handleNotificationMenuOpen}
-            sx={{
-              color: theme.text.secondary,
-              '&:hover': {
-                backgroundColor: alpha(theme.text.primary, 0.05),
-              },
-            }}
-          >
-            <Badge badgeContent={3} color="error">
-              <Notifications />
-            </Badge>
-          </IconButton>
+          <NotificationCenter />
 
           {/* Settings */}
           <IconButton
@@ -340,59 +420,6 @@ const TopBar: React.FC<TopBarProps> = ({
         <MenuItem onClick={handleLogout} sx={{ color: 'error.main' }}>
           <Logout sx={{ mr: 2, fontSize: 20 }} />
           Logout
-        </MenuItem>
-      </Menu>
-
-      {/* Notification Menu */}
-      <Menu
-        anchorEl={notificationAnchor}
-        open={Boolean(notificationAnchor)}
-        onClose={handleNotificationMenuClose}
-        PaperProps={{
-          sx: {
-            mt: 1,
-            minWidth: 300,
-            maxWidth: 400,
-            borderRadius: 2,
-            border: `1px solid ${alpha('#1B212D', 0.1)}`,
-            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
-          },
-        }}
-      >
-        <Box sx={{ p: 2, borderBottom: `1px solid ${alpha('#1B212D', 0.1)}` }}>
-          <Typography variant="h6" sx={{ fontWeight: 600 }}>
-            Notifications
-          </Typography>
-        </Box>
-        <MenuItem>
-          <Box>
-            <Typography variant="body2" sx={{ fontWeight: 500 }}>
-              Payment received
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              $1,250 from John Doe • 2 hours ago
-            </Typography>
-          </Box>
-        </MenuItem>
-        <MenuItem>
-          <Box>
-            <Typography variant="body2" sx={{ fontWeight: 500 }}>
-              Transfer completed
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              $500 to savings account • 1 day ago
-            </Typography>
-          </Box>
-        </MenuItem>
-        <MenuItem>
-          <Box>
-            <Typography variant="body2" sx={{ fontWeight: 500 }}>
-              Budget alert
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              You've spent 80% of your monthly budget • 2 days ago
-            </Typography>
-          </Box>
         </MenuItem>
       </Menu>
     </Box>

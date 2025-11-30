@@ -159,6 +159,66 @@ const authService = {
       authService.logout();
       throw error;
     }
+  },
+
+  /**
+   * Request password reset
+   * @param {string} email - User email
+   * @returns {Promise<Object>} - Response message
+   */
+  forgotPassword: async (email) => {
+    try {
+      return await httpClient.backend.post('/auth/forgot-password', { email });
+    } catch (error) {
+      console.error('Forgot password error:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Reset password with token
+   * @param {string} token - Reset token from email
+   * @param {string} newPassword - New password
+   * @returns {Promise<Object>} - Response message
+   */
+  resetPassword: async (token, newPassword) => {
+    try {
+      return await httpClient.backend.post('/auth/reset-password', {
+        token,
+        new_password: newPassword
+      });
+    } catch (error) {
+      console.error('Reset password error:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Verify email address
+   * @param {string} token - Verification token from email
+   * @returns {Promise<Object>} - Response with user data
+   */
+  verifyEmail: async (token) => {
+    try {
+      return await httpClient.backend.post('/auth/verify-email', { token });
+    } catch (error) {
+      console.error('Verify email error:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Resend verification email
+   * @param {string} email - User email
+   * @returns {Promise<Object>} - Response message
+   */
+  resendVerification: async (email) => {
+    try {
+      return await httpClient.backend.post('/auth/resend-verification', { email });
+    } catch (error) {
+      console.error('Resend verification error:', error);
+      throw error;
+    }
   }
 };
 

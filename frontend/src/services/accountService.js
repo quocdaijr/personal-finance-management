@@ -102,7 +102,9 @@ const accountService = {
   getSummary: async () => {
     try {
       // Gin backend endpoint for account summary
-      return await httpClient.backend.get('/accounts/summary');
+      // httpClient automatically transforms snake_case to camelCase
+      const data = await httpClient.backend.get('/accounts/summary');
+      return data;
     } catch (error) {
       console.error('Error fetching account summary:', error);
       throw error;

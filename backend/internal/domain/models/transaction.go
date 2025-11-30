@@ -1,6 +1,7 @@
 package models
 
 import (
+	"strconv"
 	"strings"
 	"time"
 )
@@ -39,10 +40,53 @@ type TransactionRequest struct {
 	Amount      float64   `json:"amount" binding:"required"`
 	Description string    `json:"description"`
 	Category    string    `json:"category"`
-	Type        string    `json:"type" binding:"required,oneof=income expense"`
+	Type        string    `json:"type" binding:"required,oneof=income expense transfer"`
 	Date        time.Time `json:"date" binding:"required"`
 	AccountID   uint      `json:"account_id" binding:"required"`
 	Tags        []string  `json:"tags"`
+}
+
+// TransferRequest is the request model for transfer transactions
+type TransferRequest struct {
+	Amount        float64   `json:"amount" binding:"required,gt=0"`
+	Description   string    `json:"description"`
+	FromAccountID uint      `json:"from_account_id" binding:"required"`
+	ToAccountID   uint      `json:"to_account_id" binding:"required"`
+	Date          time.Time `json:"date" binding:"required"`
+	Tags          []string  `json:"tags"`
+}
+
+// TransferResponse is the response model for a transfer transaction
+type TransferResponse struct {
+	FromTransaction *TransactionResponse `json:"from_transaction"`
+	ToTransaction   *TransactionResponse `json:"to_transaction"`
+	Message         string               `json:"message"`
+}
+
+// TransactionFilter is the filter model for querying transactions
+type TransactionFilter struct {
+	Search    string `form:"search"`
+	Category  string `form:"category"`
+	Type      string `form:"type"`
+	AccountID uint   `form:"account_id"`
+	StartDate string `form:"start_date"`
+	EndDate   string `form:"end_date"`
+	MinAmount float64 `form:"min_amount"`
+	MaxAmount float64 `form:"max_amount"`
+	Tags      string `form:"tags"`
+	Page      int    `form:"page"`
+	PageSize  int    `form:"page_size"`
+	SortBy    string `form:"sort_by"`
+	SortOrder string `form:"sort_order"`
+}
+
+// PaginatedTransactionResponse is the paginated response for transactions
+type PaginatedTransactionResponse struct {
+	Data       []*TransactionResponse `json:"data"`
+	Total      int64                  `json:"total"`
+	Page       int                    `json:"page"`
+	PageSize   int                    `json:"page_size"`
+	TotalPages int                    `json:"total_pages"`
 }
 
 // TransactionSummary represents a summary of transactions
@@ -78,7 +122,7 @@ func (t *Transaction) ToResponse() *TransactionResponse {
 		Category:    t.Category,
 		Type:        t.Type,
 		Date:        t.Date,
-		AccountID:   string(t.AccountID),
+		AccountID:   strconv.FormatUint(uint64(t.AccountID), 10),
 		Tags:        tags,
 		CreatedAt:   t.CreatedAt,
 		UpdatedAt:   t.UpdatedAt,

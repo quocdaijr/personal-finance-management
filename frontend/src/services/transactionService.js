@@ -108,6 +108,42 @@ const transactionService = {
       console.error(`Error fetching transaction summary for ${period}:`, error);
       throw error;
     }
+  },
+
+  /**
+   * Transfer money between accounts
+   * @param {Object} transferData - Transfer details
+   * @param {number} transferData.amount - Amount to transfer
+   * @param {string} transferData.description - Transfer description
+   * @param {number} transferData.from_account_id - Source account ID
+   * @param {number} transferData.to_account_id - Destination account ID
+   * @param {string} transferData.date - Transfer date
+   * @param {Array} transferData.tags - Optional tags
+   * @returns {Promise<Object>} - Transfer response with both transactions
+   */
+  transfer: async (transferData) => {
+    try {
+      return await httpClient.backend.post('/transactions/transfer', transferData);
+    } catch (error) {
+      console.error('Error transferring money:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Export transactions to CSV
+   * @param {Object} filters - Optional filters for export
+   * @returns {Promise<Blob>} - CSV file as blob
+   */
+  exportToCSV: async (filters = {}) => {
+    try {
+      const queryParams = new URLSearchParams(filters).toString();
+      const url = `/transactions/export${queryParams ? `?${queryParams}` : ''}`;
+      return await httpClient.backend.get(url, { responseType: 'blob' });
+    } catch (error) {
+      console.error('Error exporting transactions:', error);
+      throw error;
+    }
   }
 };
 

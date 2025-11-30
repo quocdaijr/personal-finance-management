@@ -7,27 +7,17 @@ FROM node:22-alpine
 # Install essential system dependencies
 RUN apk add --no-cache git curl tini
 
-# Create non-root user for security
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S reactuser -u 1001 -G nodejs
-
 # Set working directory
 WORKDIR /app
 
-# Change ownership to non-root user
-RUN chown -R reactuser:nodejs /app
+# Copy package files (for initial npm install during build)
+COPY package*.json ./
 
-# Switch to non-root user
-USER reactuser
-
-# Copy package files for better caching
-COPY --chown=reactuser:nodejs package*.json ./
-
-# Install dependencies with cache optimization
+# Install dependencies during build (creates node_modules in image layer)
 RUN npm ci && npm cache clean --force
 
-# Copy source code
-COPY --chown=reactuser:nodejs . .
+# Copy all source files
+COPY . .
 
 # Expose ports for development server and React DevTools
 EXPOSE 3000 8097

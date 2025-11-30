@@ -1,8 +1,8 @@
 import React from 'react';
-import { 
-  Card, 
-  CardContent, 
-  Typography, 
+import {
+  Card,
+  CardContent,
+  Typography,
   Box,
   LinearProgress,
   IconButton,
@@ -14,8 +14,11 @@ import {
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
+import { useUserPreferences } from '../../contexts/UserPreferencesContext';
+import { formatCurrency as formatCurrencyUtil } from '../../utils/formatters';
 
 const BudgetCard = ({ budget, onEdit, onDelete }) => {
+  const { preferences } = useUserPreferences();
   const [anchorEl, setAnchorEl] = React.useState(null);
   const open = Boolean(anchorEl);
   
@@ -43,10 +46,7 @@ const BudgetCard = ({ budget, onEdit, onDelete }) => {
   
   // Format currency
   const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(amount);
+    return formatCurrencyUtil(amount, preferences.currency);
   };
   
   // Format date

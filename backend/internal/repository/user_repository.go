@@ -91,3 +91,15 @@ func (r *UserRepository) UpdateUser(userID uint, firstName, lastName string) err
 func (r *UserRepository) Update(user *models.User) error {
 	return r.db.Save(user).Error
 }
+
+// GetByEmail gets a user by email
+func (r *UserRepository) GetByEmail(email string) (*models.User, error) {
+	var user models.User
+	result := r.db.Where("email = ?", email).First(&user)
+	return &user, result.Error
+}
+
+// VerifyEmail marks a user's email as verified
+func (r *UserRepository) VerifyEmail(userID uint) error {
+	return r.db.Model(&models.User{}).Where("id = ?", userID).Update("is_email_verified", true).Error
+}

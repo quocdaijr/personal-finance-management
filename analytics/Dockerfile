@@ -21,7 +21,9 @@ RUN pip install --no-cache-dir \
     pytest-cov \
     debugpy
 
-# No need to COPY . . as we'll use volume mounting
+# Copy all source files (necessary because volume mounting may not work properly on all systems)
+COPY . .
+
 EXPOSE 8000
 # Expose debugpy port
 EXPOSE 5678

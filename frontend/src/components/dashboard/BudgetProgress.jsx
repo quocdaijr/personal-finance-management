@@ -12,14 +12,15 @@ import {
   Button
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
+import { useUserPreferences } from '../../contexts/UserPreferencesContext';
+import { formatCurrency as formatCurrencyUtil } from '../../utils/formatters';
 
 const BudgetProgress = ({ budgets, onAddBudget, onViewBudget }) => {
+  const { preferences } = useUserPreferences();
+
   // Format currency
   const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(amount);
+    return formatCurrencyUtil(amount, preferences.currency);
   };
 
   // Get progress color based on percentage

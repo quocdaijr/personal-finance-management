@@ -23,6 +23,8 @@ import {
   ArrowDownward,
 } from '@mui/icons-material';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useUserPreferences } from '../../contexts/UserPreferencesContext';
+import { formatCurrency as formatCurrencyUtil, formatDate as formatDateUtil } from '../../utils/formatters';
 import { Transaction, TransactionTableProps, SortState } from '../../types/transaction';
 import TransactionPagination from './TransactionPagination';
 
@@ -38,21 +40,14 @@ const TransactionTable: React.FC<TransactionTableProps> = ({
   onSortChange,
 }) => {
   const { theme } = useTheme();
+  const { preferences } = useUserPreferences();
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(Math.abs(amount));
+    return formatCurrencyUtil(Math.abs(amount), preferences.currency);
   };
 
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    });
+    return formatDateUtil(dateString, preferences.dateFormat);
   };
 
   const getInitials = (description: string) => {
@@ -64,15 +59,15 @@ const TransactionTable: React.FC<TransactionTableProps> = ({
       .toUpperCase();
   };
 
-  const handleSort = (field: keyof Transaction) => {
-    onSortChange(field);
+  const handleSort = (field: string) => {
+    onSortChange(field as keyof Transaction);
   };
 
-  const getSortDirection = (field: keyof Transaction): 'asc' | 'desc' | false => {
+  const getSortDirection = (field: keyof Transaction): 'asc' | 'desc' => {
     if (sort.field === field) {
       return sort.direction;
     }
-    return false;
+    return 'asc';
   };
 
   const columns = [
@@ -126,7 +121,7 @@ const TransactionTable: React.FC<TransactionTableProps> = ({
                   {column.sortable ? (
                     <TableSortLabel
                       active={sort.field === column.id}
-                      direction={getSortDirection(column.id)}
+                      direction={getSortDirection(column.id as keyof Transaction)}
                       onClick={() => handleSort(column.id)}
                       sx={{
                         color: theme.text.primary,

@@ -29,23 +29,28 @@ import {
   ViewList,
   TableChart,
   Refresh,
+  SwapHoriz,
+  Upload,
 } from '@mui/icons-material';
 import { useTheme } from '../contexts/ThemeContext';
+import { useUserPreferences } from '../contexts/UserPreferencesContext';
 import { PageLayout } from '../components/layout';
 
 // Import enhanced components
 import TransactionTable from '../components/transactions/TransactionTable';
 import TransactionSummaryDashboard from '../components/transactions/TransactionSummaryDashboard';
 import TransactionFormEnhanced from '../components/transactions/TransactionFormEnhanced';
+import TransferDialog from '../components/transactions/TransferDialog';
+import ImportDialog from '../components/transactions/ImportDialog';
 import ConfirmationDialog from '../components/common/ConfirmationDialog';
 import TransactionList from '../components/dashboard/TransactionList';
 
-// Services would be imported here in a real implementation
-// import transactionService from '../services/transactionService';
-// import accountService from '../services/accountService';
+// Import services for API calls
+import transactionService from '../services/transactionService';
+import accountService from '../services/accountService';
 
-// Import Transaction model for mock data
-import TransactionModel from '../models/Transaction';
+// Import utilities
+import { formatDate as formatDateUtil } from '../utils/formatters';
 
 // Import types
 import {
@@ -61,6 +66,7 @@ import {
 
 const TransactionsEnhanced: React.FC = () => {
   const { theme } = useTheme();
+  const { preferences } = useUserPreferences();
 
   // State for data
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -101,6 +107,8 @@ const TransactionsEnhanced: React.FC = () => {
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [transactionToDelete, setTransactionToDelete] = useState<Transaction | null>(null);
+  const [transferDialogOpen, setTransferDialogOpen] = useState(false);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: '',
@@ -131,27 +139,23 @@ const TransactionsEnhanced: React.FC = () => {
     setError(null);
 
     try {
-      // Mock data for testing - replace with actual service calls
-      const mockAccounts: Account[] = [
-        { id: 1, name: 'Checking Account', type: 'checking', balance: 5000, isDefault: true },
-        { id: 2, name: 'Savings Account', type: 'savings', balance: 15000 },
-        { id: 3, name: 'Credit Card', type: 'credit', balance: -1200 },
-      ];
+      // Fetch accounts and categories from real API
+      const [accountsData, categoriesData] = await Promise.all([
+        accountService.getAll(),
+        transactionService.getCategories(),
+      ]);
 
-      const mockCategories = [
-        'Food & Dining',
-        'Transportation',
-        'Shopping',
-        'Entertainment',
-        'Bills & Utilities',
-        'Healthcare',
-        'Travel',
-        'Income',
-        'Other'
-      ];
+      // Map accounts to the expected format
+      const mappedAccounts: Account[] = accountsData.map((acc: any) => ({
+        id: acc.id,
+        name: acc.name,
+        type: acc.type,
+        balance: acc.balance,
+        isDefault: acc.isDefault || false,
+      }));
 
-      setAccounts(mockAccounts);
-      setCategories(mockCategories);
+      setAccounts(mappedAccounts);
+      setCategories(categoriesData || []);
 
       // Also fetch transactions on initial load
       await fetchFilteredTransactions();
@@ -163,85 +167,21 @@ const TransactionsEnhanced: React.FC = () => {
     }
   };
 
-  // Fetch filtered transactions
+  // Fetch filtered transactions from real API
   const fetchFilteredTransactions = useCallback(async () => {
     try {
-      // Mock transaction data for testing - using Transaction model
-      const mockTransactionData = [
-        {
-          id: 1,
-          amount: 85.50,
-          description: 'Grocery Shopping',
-          category: 'Food & Dining',
-          type: 'expense',
-          date: '2024-05-30',
-          accountId: 1,
-          tags: ['groceries', 'weekly'],
-          createdAt: '2024-05-30T10:30:00Z',
-          updatedAt: '2024-05-30T10:30:00Z'
-        },
-        {
-          id: 2,
-          amount: 2500.00,
-          description: 'Salary Payment',
-          category: 'Income',
-          type: 'income',
-          date: '2024-05-28',
-          accountId: 1,
-          tags: ['salary', 'monthly'],
-          createdAt: '2024-05-28T09:00:00Z',
-          updatedAt: '2024-05-28T09:00:00Z'
-        },
-        {
-          id: 3,
-          amount: 45.00,
-          description: 'Gas Station',
-          category: 'Transportation',
-          type: 'expense',
-          date: '2024-05-29',
-          accountId: 1,
-          tags: ['fuel'],
-          createdAt: '2024-05-29T16:45:00Z',
-          updatedAt: '2024-05-29T16:45:00Z'
-        },
-        {
-          id: 4,
-          amount: 120.00,
-          description: 'Electric Bill',
-          category: 'Bills & Utilities',
-          type: 'expense',
-          date: '2024-05-27',
-          accountId: 1,
-          tags: ['utilities', 'monthly'],
-          createdAt: '2024-05-27T14:20:00Z',
-          updatedAt: '2024-05-27T14:20:00Z'
-        },
-        {
-          id: 5,
-          amount: 25.99,
-          description: 'Netflix Subscription',
-          category: 'Entertainment',
-          type: 'expense',
-          date: '2024-05-26',
-          accountId: 2,
-          tags: ['subscription', 'streaming'],
-          createdAt: '2024-05-26T12:00:00Z',
-          updatedAt: '2024-05-26T12:00:00Z'
-        }
-      ];
+      // Fetch all transactions from API
+      const allTransactions = await transactionService.getAll();
 
-      // Convert to Transaction model instances
-      const mockTransactions = mockTransactionData.map(data => TransactionModel.fromJSON(data));
-
-      // Apply filters
-      let filteredTransactions = mockTransactions.filter((transaction: any) => {
+      // Apply filters client-side (backend can handle this too with query params)
+      let filteredTransactions = allTransactions.filter((transaction: any) => {
         if (filters.search && !transaction.description.toLowerCase().includes(filters.search.toLowerCase())) {
           return false;
         }
         if (filters.category && transaction.category !== filters.category) {
           return false;
         }
-        if (filters.account && transaction.accountId.toString() !== filters.account) {
+        if (filters.account && transaction.accountId?.toString() !== filters.account) {
           return false;
         }
         if (filters.type && transaction.type !== filters.type) {
@@ -257,7 +197,7 @@ const TransactionsEnhanced: React.FC = () => {
       });
 
       // Apply sorting
-      filteredTransactions.sort((a, b) => {
+      filteredTransactions.sort((a: any, b: any) => {
         const aValue = a[sort.field];
         const bValue = b[sort.field];
 
@@ -348,8 +288,30 @@ const TransactionsEnhanced: React.FC = () => {
 
   const handleSaveTransaction = async (transactionData: TransactionFormData) => {
     try {
-      // Mock save operation - in real app, this would call the service
-      console.log('Saving transaction:', transactionData);
+      // Prepare data for API
+      // Backend expects RFC3339 format (ISO 8601 with time)
+      // TransactionFormData.date is always a Date object from the form
+      const formattedDate = transactionData.date instanceof Date
+        ? transactionData.date.toISOString()
+        : new Date().toISOString();
+
+      const apiData = {
+        amount: parseFloat(transactionData.amount),
+        description: transactionData.description,
+        category: transactionData.category,
+        type: transactionData.type,
+        date: formattedDate,
+        account_id: parseInt(transactionData.accountId, 10),
+        tags: transactionData.tags || [],
+      };
+
+      if (editingTransaction) {
+        // Update existing transaction
+        await transactionService.update(String(editingTransaction.id), apiData);
+      } else {
+        // Create new transaction
+        await transactionService.create(apiData);
+      }
 
       setSnackbar({
         open: true,
@@ -380,8 +342,8 @@ const TransactionsEnhanced: React.FC = () => {
     if (!transactionToDelete) return;
 
     try {
-      // Mock delete operation - in real app, this would call the service
-      console.log('Deleting transaction:', transactionToDelete.id);
+      // Delete transaction via API
+      await transactionService.delete(String(transactionToDelete.id));
 
       setSnackbar({
         open: true,
@@ -523,6 +485,40 @@ const TransactionsEnhanced: React.FC = () => {
           ))}
         </ToggleButtonGroup>
 
+        {/* Import Button */}
+        <Button
+          variant="outlined"
+          startIcon={<Upload />}
+          onClick={() => setImportDialogOpen(true)}
+          sx={{
+            borderRadius: 2,
+            px: 3,
+            py: 1.5,
+            textTransform: 'none',
+            fontWeight: 600,
+            mr: 2,
+          }}
+        >
+          Import
+        </Button>
+
+        {/* Transfer Button */}
+        <Button
+          variant="outlined"
+          startIcon={<SwapHoriz />}
+          onClick={() => setTransferDialogOpen(true)}
+          sx={{
+            borderRadius: 2,
+            px: 3,
+            py: 1.5,
+            textTransform: 'none',
+            fontWeight: 600,
+            mr: 2,
+          }}
+        >
+          Transfer
+        </Button>
+
         {/* Add Transaction Button */}
         <Button
           variant="contained"
@@ -649,7 +645,7 @@ const TransactionsEnhanced: React.FC = () => {
                     label="From Date"
                     value={filters.dateFrom}
                     onChange={(date) => handleFilterChange('dateFrom', date)}
-                    renderInput={(params) => <TextField {...params} fullWidth />}
+                    slotProps={{ textField: { fullWidth: true } }}
                   />
                 </LocalizationProvider>
               </Grid>
@@ -660,7 +656,7 @@ const TransactionsEnhanced: React.FC = () => {
                     label="To Date"
                     value={filters.dateTo}
                     onChange={(date) => handleFilterChange('dateTo', date)}
-                    renderInput={(params) => <TextField {...params} fullWidth />}
+                    slotProps={{ textField: { fullWidth: true } }}
                   />
                 </LocalizationProvider>
               </Grid>
@@ -710,7 +706,7 @@ const TransactionsEnhanced: React.FC = () => {
 
           {filters.dateFrom && (
             <Chip
-              label={`From: ${new Date(filters.dateFrom).toLocaleDateString()}`}
+              label={`From: ${formatDateUtil(filters.dateFrom, preferences.dateFormat)}`}
               size="small"
               onDelete={() => handleFilterChange('dateFrom', null)}
             />
@@ -718,7 +714,7 @@ const TransactionsEnhanced: React.FC = () => {
 
           {filters.dateTo && (
             <Chip
-              label={`To: ${new Date(filters.dateTo).toLocaleDateString()}`}
+              label={`To: ${formatDateUtil(filters.dateTo, preferences.dateFormat)}`}
               size="small"
               onDelete={() => handleFilterChange('dateTo', null)}
             />
@@ -772,6 +768,34 @@ const TransactionsEnhanced: React.FC = () => {
           setTransactionToDelete(null);
         }}
         severity="error"
+      />
+
+      {/* Transfer Dialog */}
+      <TransferDialog
+        open={transferDialogOpen}
+        onClose={() => setTransferDialogOpen(false)}
+        onSuccess={() => {
+          setSnackbar({
+            open: true,
+            message: 'Transfer completed successfully',
+            severity: 'success',
+          });
+          fetchTransactionsData();
+        }}
+      />
+
+      {/* Import Dialog */}
+      <ImportDialog
+        open={importDialogOpen}
+        onClose={() => setImportDialogOpen(false)}
+        onSuccess={() => {
+          setSnackbar({
+            open: true,
+            message: 'Transactions imported successfully',
+            severity: 'success',
+          });
+          fetchTransactionsData();
+        }}
       />
 
       {/* Snackbar for notifications */}

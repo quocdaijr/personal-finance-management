@@ -12,13 +12,18 @@ import (
 
 // TransactionHandler handles HTTP requests for transactions
 type TransactionHandler struct {
-	transactionService *services.TransactionService
+	transactionService   *services.TransactionService
+	budgetAlertService   *services.BudgetAlertService
 }
 
 // NewTransactionHandler creates a new transaction handler
-func NewTransactionHandler(transactionService *services.TransactionService) *TransactionHandler {
+func NewTransactionHandler(
+	transactionService *services.TransactionService,
+	budgetAlertService *services.BudgetAlertService,
+) *TransactionHandler {
 	return &TransactionHandler{
-		transactionService: transactionService,
+		transactionService:   transactionService,
+		budgetAlertService:   budgetAlertService,
 	}
 }
 
@@ -43,6 +48,13 @@ func (h *TransactionHandler) Create(c *gin.Context) {
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
+	}
+
+	// Check budget alerts after expense transaction (async to not slow down response)
+	if transaction.Type == "expense" && h.budgetAlertService != nil {
+		go func() {
+			h.budgetAlertService.CheckBudgetsAfterTransaction(userID, transaction.Category)
+		}()
 	}
 
 	// Return response
@@ -99,6 +111,32 @@ func (h *TransactionHandler) GetAll(c *gin.Context) {
 	}
 
 	// Return response
+	c.JSON(http.StatusOK, response)
+}
+
+// Search handles searching and filtering transactions with pagination
+func (h *TransactionHandler) Search(c *gin.Context) {
+	// Get user ID from context
+	userID, err := utils.GetUserIDFromContext(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	// Bind query parameters to filter
+	var filter models.TransactionFilter
+	if err := c.ShouldBindQuery(&filter); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Get filtered transactions
+	response, err := h.transactionService.GetFiltered(userID, &filter)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
 	c.JSON(http.StatusOK, response)
 }
 
@@ -192,4 +230,31 @@ func (h *TransactionHandler) GetSummary(c *gin.Context) {
 
 	// Return response
 	c.JSON(http.StatusOK, summary)
+}
+
+// Transfer handles transferring money between accounts
+func (h *TransactionHandler) Transfer(c *gin.Context) {
+	// Get user ID from context
+	userID, err := utils.GetUserIDFromContext(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	// Bind request body
+	var req models.TransferRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Execute transfer
+	response, err := h.transactionService.Transfer(userID, &req)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Return response
+	c.JSON(http.StatusCreated, response)
 }

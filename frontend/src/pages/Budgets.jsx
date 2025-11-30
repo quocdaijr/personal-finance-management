@@ -31,9 +31,14 @@ import budgetService from '../services/budgetService';
 
 // Import contexts
 import { useTheme } from '../contexts/ThemeContext';
+import { useUserPreferences } from '../contexts/UserPreferencesContext';
+
+// Import utilities
+import { formatCurrency as formatCurrencyUtil, formatDate as formatDateUtil } from '../utils/formatters';
 
 const Budgets = () => {
   const { theme } = useTheme();
+  const { preferences } = useUserPreferences();
 
   // State for data
   const [budgets, setBudgets] = useState([]);
@@ -89,12 +94,14 @@ const Budgets = () => {
     }
   };
   
-  // Format currency
+  // Format currency using user preferences
   const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(amount);
+    return formatCurrencyUtil(amount, preferences.currency);
+  };
+
+  // Format date using user preferences
+  const formatDate = (date) => {
+    return formatDateUtil(date, preferences.dateFormat);
   };
   
   // Handle budget form open
@@ -264,140 +271,139 @@ const Budgets = () => {
       showSearch={false}
     >
       {/* Action Button */}
-        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 3 }}>
-          <Button
-            variant="contained"
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 3 }}>
+        <Button
+          variant="contained"
+          startIcon={<AddIcon />}
+          onClick={handleAddBudget}
+          sx={{
+            borderRadius: 2,
+            px: 3,
+            py: 1.5,
+            textTransform: 'none',
+            fontWeight: 600
+          }}
+        >
+          Create Budget
+        </Button>
+      </Box>
+      
+      {/* Budget summary */}
+      <Paper sx={{ p: 3, mb: 4 }}>
+        <Grid container spacing={3}>
+          <Grid item xs={12} sm={6} md={3}>
+            <Typography variant="subtitle2" color="text.secondary">
+              Total Budgeted
+            </Typography>
+            <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
+              {formatCurrency(budgetSummary.totalBudgeted)}
+            </Typography>
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <Typography variant="subtitle2" color="text.secondary">
+              Total Spent
+            </Typography>
+            <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
+              {formatCurrency(budgetSummary.totalSpent)}
+            </Typography>
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <Typography variant="subtitle2" color="text.secondary">
+              Remaining
+            </Typography>
+            <Typography 
+              variant="h5" 
+              sx={{ 
+                fontWeight: 'bold',
+                color: budgetSummary.totalRemaining >= 0 ? 'success.main' : 'error.main'
+              }}
+            >
+              {formatCurrency(budgetSummary.totalRemaining)}
+            </Typography>
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <Typography variant="subtitle2" color="text.secondary">
+              Overall Progress
+            </Typography>
+            <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
+              {budgetSummary.overallProgress}%
+            </Typography>
+          </Grid>
+        </Grid>
+      </Paper>
+      
+      {/* Filter */}
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+        <Typography variant="h6">
+          {filteredBudgets.length} Budget{filteredBudgets.length !== 1 ? 's' : ''}
+        </Typography>
+        
+        <FormControl sx={{ minWidth: 200 }}>
+          <InputLabel id="filter-label">Filter</InputLabel>
+          <Select
+            labelId="filter-label"
+            id="filter"
+            value={filter}
+            label="Filter"
+            onChange={handleFilterChange}
+            size="small"
+          >
+            <MenuItem value="all">All Budgets</MenuItem>
+            <MenuItem value="over">Over Budget</MenuItem>
+            <MenuItem value="near">Near Limit (80%+)</MenuItem>
+            <MenuItem value="under">Under Budget</MenuItem>
+          </Select>
+        </FormControl>
+      </Box>
+      
+      {/* Budgets grid */}
+      {budgets.length === 0 ? (
+        <Paper sx={{ p: 4, textAlign: 'center' }}>
+          <Typography variant="h6" color="text.secondary" gutterBottom>
+            No budgets found
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Create your first budget to start tracking your spending.
+          </Typography>
+          <Button 
+            variant="contained" 
             startIcon={<AddIcon />}
+            sx={{ mt: 2 }} 
             onClick={handleAddBudget}
-            sx={{
-              borderRadius: 2,
-              px: 3,
-              py: 1.5,
-              textTransform: 'none',
-              fontWeight: 600
-            }}
           >
             Create Budget
           </Button>
-        </Box>
-        
-        {/* Budget summary */}
-        <Paper sx={{ p: 3, mb: 4 }}>
-          <Grid container spacing={3}>
-            <Grid item xs={12} sm={6} md={3}>
-              <Typography variant="subtitle2" color="text.secondary">
-                Total Budgeted
-              </Typography>
-              <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
-                {formatCurrency(budgetSummary.totalBudgeted)}
-              </Typography>
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
-              <Typography variant="subtitle2" color="text.secondary">
-                Total Spent
-              </Typography>
-              <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
-                {formatCurrency(budgetSummary.totalSpent)}
-              </Typography>
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
-              <Typography variant="subtitle2" color="text.secondary">
-                Remaining
-              </Typography>
-              <Typography 
-                variant="h5" 
-                sx={{ 
-                  fontWeight: 'bold',
-                  color: budgetSummary.totalRemaining >= 0 ? 'success.main' : 'error.main'
-                }}
-              >
-                {formatCurrency(budgetSummary.totalRemaining)}
-              </Typography>
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
-              <Typography variant="subtitle2" color="text.secondary">
-                Overall Progress
-              </Typography>
-              <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
-                {budgetSummary.overallProgress}%
-              </Typography>
-            </Grid>
-          </Grid>
         </Paper>
-        
-        {/* Filter */}
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-          <Typography variant="h6">
-            {filteredBudgets.length} Budget{filteredBudgets.length !== 1 ? 's' : ''}
+      ) : filteredBudgets.length === 0 ? (
+        <Paper sx={{ p: 4, textAlign: 'center' }}>
+          <Typography variant="h6" color="text.secondary" gutterBottom>
+            No budgets match the current filter
           </Typography>
-          
-          <FormControl sx={{ minWidth: 200 }}>
-            <InputLabel id="filter-label">Filter</InputLabel>
-            <Select
-              labelId="filter-label"
-              id="filter"
-              value={filter}
-              label="Filter"
-              onChange={handleFilterChange}
-              size="small"
-            >
-              <MenuItem value="all">All Budgets</MenuItem>
-              <MenuItem value="over">Over Budget</MenuItem>
-              <MenuItem value="near">Near Limit (80%+)</MenuItem>
-              <MenuItem value="under">Under Budget</MenuItem>
-            </Select>
-          </FormControl>
-        </Box>
-        
-        {/* Budgets grid */}
-        {budgets.length === 0 ? (
-          <Paper sx={{ p: 4, textAlign: 'center' }}>
-            <Typography variant="h6" color="text.secondary" gutterBottom>
-              No budgets found
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Create your first budget to start tracking your spending.
-            </Typography>
-            <Button 
-              variant="contained" 
-              startIcon={<AddIcon />}
-              sx={{ mt: 2 }} 
-              onClick={handleAddBudget}
-            >
-              Create Budget
-            </Button>
-          </Paper>
-        ) : filteredBudgets.length === 0 ? (
-          <Paper sx={{ p: 4, textAlign: 'center' }}>
-            <Typography variant="h6" color="text.secondary" gutterBottom>
-              No budgets match the current filter
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Try changing the filter to see more budgets.
-            </Typography>
-            <Button 
-              variant="outlined" 
-              sx={{ mt: 2 }} 
-              onClick={() => setFilter('all')}
-            >
-              Show All Budgets
-            </Button>
-          </Paper>
-        ) : (
-          <Grid container spacing={3}>
-            {filteredBudgets.map(budget => (
-              <Grid item xs={12} sm={6} md={4} key={budget.id}>
-                <BudgetCard 
-                  budget={budget}
-                  onEdit={handleEditBudget}
-                  onDelete={handleDeleteDialogOpen}
-                />
-              </Grid>
-            ))}
-          </Grid>
-        )}
-      </Box>
-      
+          <Typography variant="body2" color="text.secondary">
+            Try changing the filter to see more budgets.
+          </Typography>
+          <Button 
+            variant="outlined" 
+            sx={{ mt: 2 }} 
+            onClick={() => setFilter('all')}
+          >
+            Show All Budgets
+          </Button>
+        </Paper>
+      ) : (
+        <Grid container spacing={3}>
+          {filteredBudgets.map(budget => (
+            <Grid item xs={12} sm={6} md={4} key={budget.id}>
+              <BudgetCard 
+                budget={budget}
+                onEdit={handleEditBudget}
+                onDelete={handleDeleteDialogOpen}
+              />
+            </Grid>
+          ))}
+        </Grid>
+      )}
+
       {/* Budget form dialog */}
       <BudgetForm 
         open={budgetFormOpen}

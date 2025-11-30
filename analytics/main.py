@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Depends, HTTPException, Security
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
@@ -15,6 +16,21 @@ from models import User, Account, Transaction, Budget
 from auth import AuthHandler
 
 app = FastAPI(title="Finance Management Analytics API", version="1.0.0")
+
+# Configure CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:3000",
+        "http://localhost:5173",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:5173",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 security = HTTPBearer()
 auth_handler = AuthHandler()
 

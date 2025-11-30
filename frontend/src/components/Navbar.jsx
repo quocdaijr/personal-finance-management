@@ -90,11 +90,11 @@ const Navbar = () => {
             <ListItem sx={{ py: 2, px: 3 }}>
               <Box sx={{ display: 'flex', alignItems: 'center' }}>
                 <Avatar sx={{ mr: 2 }}>
-                  {currentUser?.first_name?.charAt(0) || currentUser?.username?.charAt(0) || <AccountCircleIcon />}
+                  {currentUser?.firstName?.charAt(0) || currentUser?.username?.charAt(0) || <AccountCircleIcon />}
                 </Avatar>
                 <Box>
                   <Typography variant="subtitle1">
-                    {currentUser?.first_name ? `${currentUser.first_name} ${currentUser.last_name || ''}` : currentUser?.username || 'User'}
+                    {currentUser?.firstName ? `${currentUser.firstName} ${currentUser.lastName || ''}` : currentUser?.username || 'User'}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
                     {currentUser?.email || ''}

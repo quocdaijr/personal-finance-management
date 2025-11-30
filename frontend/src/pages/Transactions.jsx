@@ -25,6 +25,7 @@ import AddIcon from '@mui/icons-material/Add';
 import SearchIcon from '@mui/icons-material/Search';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import { useTheme } from '../contexts/ThemeContext';
+import { useUserPreferences } from '../contexts/UserPreferencesContext';
 import { PageLayout } from '../components/layout';
 
 // Import components
@@ -35,8 +36,12 @@ import TransactionForm from '../components/dashboard/TransactionForm';
 import transactionService from '../services/transactionService';
 import accountService from '../services/accountService';
 
+// Import utilities
+import { formatCurrency as formatCurrencyUtil, formatDate as formatDateUtil } from '../utils/formatters';
+
 const Transactions = () => {
   const { theme } = useTheme();
+  const { preferences } = useUserPreferences();
 
   // State for data
   const [transactions, setTransactions] = useState([]);
@@ -282,12 +287,14 @@ const Transactions = () => {
   
   const summary = calculateSummary();
   
-  // Format currency
+  // Format currency using user preferences
   const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(amount);
+    return formatCurrencyUtil(amount, preferences.currency);
+  };
+
+  // Format date using user preferences
+  const formatDate = (date) => {
+    return formatDateUtil(date, preferences.dateFormat);
   };
 
   // Show loading state
@@ -585,17 +592,17 @@ const Transactions = () => {
             )}
             
             {filters.dateFrom && (
-              <Chip 
-                label={`From: ${new Date(filters.dateFrom).toLocaleDateString()}`} 
-                size="small" 
+              <Chip
+                label={`From: ${formatDate(filters.dateFrom)}`}
+                size="small"
                 onDelete={() => setFilters(prev => ({ ...prev, dateFrom: null }))}
               />
             )}
-            
+
             {filters.dateTo && (
-              <Chip 
-                label={`To: ${new Date(filters.dateTo).toLocaleDateString()}`} 
-                size="small" 
+              <Chip
+                label={`To: ${formatDate(filters.dateTo)}`}
+                size="small"
                 onDelete={() => setFilters(prev => ({ ...prev, dateTo: null }))}
               />
             )}

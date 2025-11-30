@@ -102,7 +102,9 @@ const budgetService = {
   getSummary: async () => {
     try {
       // Gin backend endpoint for budget summary
-      return await httpClient.backend.get('/budgets/summary');
+      // httpClient automatically transforms snake_case to camelCase
+      const data = await httpClient.backend.get('/budgets/summary');
+      return data;
     } catch (error) {
       console.error('Error fetching budget summary:', error);
       throw error;

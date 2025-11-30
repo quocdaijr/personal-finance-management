@@ -1,6 +1,7 @@
 package models
 
 import (
+	"fmt"
 	"time"
 )
 
@@ -63,7 +64,7 @@ type BudgetSummary struct {
 // ToResponse converts a Budget to a BudgetResponse
 func (b *Budget) ToResponse() *BudgetResponse {
 	return &BudgetResponse{
-		ID:        string(b.ID),
+		ID:        fmt.Sprintf("%d", b.ID),
 		Name:      b.Name,
 		Amount:    b.Amount,
 		Spent:     b.Spent,

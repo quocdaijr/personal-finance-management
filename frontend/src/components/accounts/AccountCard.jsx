@@ -1,8 +1,8 @@
 import React from 'react';
-import { 
-  Card, 
-  CardContent, 
-  Typography, 
+import {
+  Card,
+  CardContent,
+  Typography,
   Box,
   Chip,
   IconButton,
@@ -20,8 +20,11 @@ import CreditCardIcon from '@mui/icons-material/CreditCard';
 import SavingsIcon from '@mui/icons-material/Savings';
 import ShowChartIcon from '@mui/icons-material/ShowChart';
 import PaymentsIcon from '@mui/icons-material/Payments';
+import { useUserPreferences } from '../../contexts/UserPreferencesContext';
+import { formatCurrency as formatCurrencyUtil } from '../../utils/formatters';
 
 const AccountCard = ({ account, onEdit, onDelete, onSetDefault }) => {
+  const { preferences } = useUserPreferences();
   const [anchorEl, setAnchorEl] = React.useState(null);
   const open = Boolean(anchorEl);
   
@@ -86,11 +89,8 @@ const AccountCard = ({ account, onEdit, onDelete, onSetDefault }) => {
   };
   
   // Format currency
-  const formatCurrency = (amount, currency = 'USD') => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: currency
-    }).format(amount);
+  const formatCurrency = (amount) => {
+    return formatCurrencyUtil(amount, preferences.currency);
   };
 
   return (

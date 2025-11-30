@@ -24,6 +24,11 @@ import {
   ExpandMore,
   Person,
   Tune,
+  Flag,
+  Repeat,
+  PieChart,
+  Assessment,
+  Category,
 } from '@mui/icons-material';
 import { alpha } from '@mui/material/styles';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -89,6 +94,41 @@ const Sidebar: React.FC<SidebarProps> = ({
       label: 'My Wallets',
       icon: <AccountBalanceWallet />,
       path: '/wallets',
+      section: 'main',
+    },
+    {
+      id: 'budgets',
+      label: 'Budgets',
+      icon: <PieChart />,
+      path: '/budgets',
+      section: 'main',
+    },
+    {
+      id: 'goals',
+      label: 'Goals',
+      icon: <Flag />,
+      path: '/goals',
+      section: 'main',
+    },
+    {
+      id: 'recurring',
+      label: 'Recurring',
+      icon: <Repeat />,
+      path: '/recurring',
+      section: 'main',
+    },
+    {
+      id: 'reports',
+      label: 'Reports',
+      icon: <Assessment />,
+      path: '/reports',
+      section: 'main',
+    },
+    {
+      id: 'categories',
+      label: 'Categories',
+      icon: <Category />,
+      path: '/categories',
       section: 'main',
     },
     {

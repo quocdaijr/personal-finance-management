@@ -22,6 +22,8 @@ import {
 } from '@mui/icons-material';
 import { alpha } from '@mui/material/styles';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useUserPreferences } from '../../contexts/UserPreferencesContext';
+import { formatCurrency as formatCurrencyUtil } from '../../utils/formatters';
 
 interface TransactionData {
   id: string;
@@ -53,6 +55,7 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({
   maxItems = 5,
 }) => {
   const { theme, isDarkMode } = useTheme();
+  const { preferences } = useUserPreferences();
   // Default transactions data matching Figma design
   const defaultTransactions: TransactionData[] = [
     {
@@ -121,11 +124,8 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({
   const limitedTransactions = displayTransactions.slice(0, maxItems);
 
   // Format currency
-  const formatCurrency = (amount: number, currency: string = 'USD') => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: currency,
-    }).format(amount);
+  const formatCurrency = (amount: number) => {
+    return formatCurrencyUtil(amount, preferences.currency);
   };
 
   // Get transaction icon color
@@ -274,16 +274,10 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({
                       justifyContent: 'center',
                     }}
                   >
-                    {transaction.icon ? (
-                      React.cloneElement(transaction.icon as React.ReactElement, {
-                        sx: { color: getIconColor(transaction.type), fontSize: 24 }
-                      })
+                    {transaction.type === 'income' ? (
+                      <ArrowUpward sx={{ color: getIconColor(transaction.type), fontSize: 24 }} />
                     ) : (
-                      transaction.type === 'income' ? (
-                        <ArrowUpward sx={{ color: getIconColor(transaction.type), fontSize: 24 }} />
-                      ) : (
-                        <ArrowDownward sx={{ color: getIconColor(transaction.type), fontSize: 24 }} />
-                      )
+                      <ArrowDownward sx={{ color: getIconColor(transaction.type), fontSize: 24 }} />
                     )}
                   </Box>
 

@@ -16,6 +16,9 @@ type User struct {
 	IsEmailVerified   bool      `gorm:"default:false" json:"is_email_verified"`
 	TwoFactorEnabled  bool      `gorm:"default:false" json:"two_factor_enabled"`
 	TwoFactorSecret   string    `json:"-"` // Don't include in JSON
+	PreferredCurrency string    `gorm:"default:'USD'" json:"preferred_currency"`
+	DateFormat        string    `gorm:"default:'MM/DD/YYYY'" json:"date_format"`
+	PreferredLanguage string    `gorm:"default:'en'" json:"preferred_language"`
 	LastLoginAt       *time.Time `json:"last_login_at"`
 	CreatedAt         time.Time `gorm:"autoCreateTime" json:"created_at"`
 	UpdatedAt         time.Time `gorm:"autoUpdateTime" json:"updated_at"`
@@ -23,32 +26,38 @@ type User struct {
 
 // UserResponse represents the user data returned in API responses
 type UserResponse struct {
-	ID               uint       `json:"id"`
-	Username         string     `json:"username"`
-	Email            string     `json:"email"`
-	FirstName        string     `json:"first_name"`
-	LastName         string     `json:"last_name"`
-	IsActive         bool       `json:"is_active"`
-	IsEmailVerified  bool       `json:"is_email_verified"`
-	TwoFactorEnabled bool       `json:"two_factor_enabled"`
-	LastLoginAt      *time.Time `json:"last_login_at"`
-	CreatedAt        time.Time  `json:"created_at"`
-	UpdatedAt        time.Time  `json:"updated_at"`
+	ID                uint       `json:"id"`
+	Username          string     `json:"username"`
+	Email             string     `json:"email"`
+	FirstName         string     `json:"first_name"`
+	LastName          string     `json:"last_name"`
+	IsActive          bool       `json:"is_active"`
+	IsEmailVerified   bool       `json:"is_email_verified"`
+	TwoFactorEnabled  bool       `json:"two_factor_enabled"`
+	PreferredCurrency string     `json:"preferred_currency"`
+	DateFormat        string     `json:"date_format"`
+	PreferredLanguage string     `json:"preferred_language"`
+	LastLoginAt       *time.Time `json:"last_login_at"`
+	CreatedAt         time.Time  `json:"created_at"`
+	UpdatedAt         time.Time  `json:"updated_at"`
 }
 
 // ToResponse converts a User to a UserResponse
 func (u *User) ToResponse() *UserResponse {
 	return &UserResponse{
-		ID:               u.ID,
-		Username:         u.Username,
-		Email:            u.Email,
-		FirstName:        u.FirstName,
-		LastName:         u.LastName,
-		IsActive:         u.IsActive,
-		IsEmailVerified:  u.IsEmailVerified,
-		TwoFactorEnabled: u.TwoFactorEnabled,
-		LastLoginAt:      u.LastLoginAt,
-		CreatedAt:        u.CreatedAt,
-		UpdatedAt:        u.UpdatedAt,
+		ID:                u.ID,
+		Username:          u.Username,
+		Email:             u.Email,
+		FirstName:         u.FirstName,
+		LastName:          u.LastName,
+		IsActive:          u.IsActive,
+		IsEmailVerified:   u.IsEmailVerified,
+		TwoFactorEnabled:  u.TwoFactorEnabled,
+		PreferredCurrency: u.PreferredCurrency,
+		DateFormat:        u.DateFormat,
+		PreferredLanguage: u.PreferredLanguage,
+		LastLoginAt:       u.LastLoginAt,
+		CreatedAt:         u.CreatedAt,
+		UpdatedAt:         u.UpdatedAt,
 	}
 }

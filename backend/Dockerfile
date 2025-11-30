@@ -11,17 +11,17 @@ RUN apk add --no-cache \
     gcc \
     libc-dev
 
-# Copy only go.mod first for better caching
-COPY go.mod ./
+# Copy go.mod and go.sum first for better caching
+COPY go.mod go.sum ./
 RUN go mod download
 
 # Install development tools
 RUN go install github.com/air-verse/air@v1.52.3 \
     && go install github.com/go-delve/delve/cmd/dlv@latest
 
-COPY .air.toml ./
+# Copy all source code
+COPY . .
 
-# No need to COPY . . as we'll use volume mounting
 EXPOSE 8080
 # Expose delve debugger port
 EXPOSE 2345

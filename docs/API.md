@@ -108,6 +108,81 @@ Refresh access token using refresh token.
 }
 ```
 
+#### POST /api/auth/forgot-password
+Request a password reset link via email.
+
+**Request:**
+```json
+{
+  "email": "user@example.com"
+}
+```
+
+**Response:**
+```json
+{
+  "message": "If the email exists, a password reset link will be sent"
+}
+```
+
+#### POST /api/auth/reset-password
+Reset password using the token from email.
+
+**Request:**
+```json
+{
+  "token": "reset_token_from_email",
+  "new_password": "newSecurePassword123"
+}
+```
+
+**Response:**
+```json
+{
+  "message": "Password has been reset successfully"
+}
+```
+
+#### POST /api/auth/verify-email
+Verify user email address using the token from email.
+
+**Request:**
+```json
+{
+  "token": "verification_token_from_email"
+}
+```
+
+**Response:**
+```json
+{
+  "message": "Email verified successfully",
+  "user": {
+    "id": 1,
+    "username": "testuser",
+    "email": "test@example.com",
+    "is_email_verified": true
+  }
+}
+```
+
+#### POST /api/auth/resend-verification
+Resend email verification link.
+
+**Request:**
+```json
+{
+  "email": "user@example.com"
+}
+```
+
+**Response:**
+```json
+{
+  "message": "If the email exists and is not verified, a verification link will be sent"
+}
+```
+
 ### Account Management
 
 #### GET /api/accounts

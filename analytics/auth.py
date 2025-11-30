@@ -8,6 +8,7 @@ from datetime import datetime, timedelta
 # JWT Secret key - should be loaded from environment variable in production
 JWT_SECRET = os.getenv("JWT_SECRET", "your-secret-key")
 JWT_ALGORITHM = "HS256"
+JWT_AUDIENCE = "finance-management-analytics"
 
 security = HTTPBearer()
 
@@ -15,15 +16,22 @@ class AuthHandler:
     def __init__(self):
         self.secret = JWT_SECRET
         self.algorithm = JWT_ALGORITHM
+        self.audience = JWT_AUDIENCE
 
     def decode_token(self, token):
         try:
-            payload = jwt.decode(token, self.secret, algorithms=[self.algorithm])
+            # Decode with audience validation
+            payload = jwt.decode(
+                token,
+                self.secret,
+                algorithms=[self.algorithm],
+                audience=self.audience
+            )
             if datetime.fromtimestamp(payload['exp']) < datetime.now():
                 raise HTTPException(status_code=HTTP_401_UNAUTHORIZED, detail="Token has expired")
             return payload
-        except jwt.InvalidTokenError:
-            raise HTTPException(status_code=HTTP_401_UNAUTHORIZED, detail="Invalid token")
+        except jwt.InvalidTokenError as e:
+            raise HTTPException(status_code=HTTP_401_UNAUTHORIZED, detail=f"Invalid token: {str(e)}")
 
     def auth_wrapper(self, auth: HTTPAuthorizationCredentials = Security(security)):
         return self.decode_token(auth.credentials)

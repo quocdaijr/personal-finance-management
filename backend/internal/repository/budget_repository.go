@@ -44,6 +44,17 @@ func (r *BudgetRepository) GetAll(userID uint) ([]models.Budget, error) {
 	return budgets, nil
 }
 
+// GetActive gets all active budgets for a user (budgets where current date is within start and end date)
+func (r *BudgetRepository) GetActive(userID uint) ([]models.Budget, error) {
+	var budgets []models.Budget
+	now := time.Now()
+	err := r.db.Where("user_id = ? AND start_date <= ? AND end_date >= ?", userID, now, now).Find(&budgets).Error
+	if err != nil {
+		return nil, err
+	}
+	return budgets, nil
+}
+
 // Update updates a budget
 func (r *BudgetRepository) Update(budget *models.Budget) error {
 	// Calculate end date based on period and start date

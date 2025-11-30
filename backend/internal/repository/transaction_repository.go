@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"strings"
 	"time"
 
 	"github.com/quocdaijr/finance-management-backend/internal/domain/models"
@@ -117,4 +118,133 @@ func (r *TransactionRepository) GetSummary(userID uint, startDate, endDate time.
 	}
 
 	return summary, nil
+}
+
+// GetFiltered gets transactions with filters and pagination
+func (r *TransactionRepository) GetFiltered(userID uint, filter *models.TransactionFilter) ([]models.Transaction, int64, error) {
+	var transactions []models.Transaction
+	var total int64
+
+	// Build query
+	query := r.db.Model(&models.Transaction{}).Where("user_id = ?", userID)
+
+	// Apply filters
+	if filter.Search != "" {
+		searchTerm := "%" + strings.ToLower(filter.Search) + "%"
+		query = query.Where("LOWER(description) LIKE ? OR LOWER(category) LIKE ? OR LOWER(tags) LIKE ?",
+			searchTerm, searchTerm, searchTerm)
+	}
+
+	if filter.Category != "" {
+		query = query.Where("category = ?", filter.Category)
+	}
+
+	if filter.Type != "" {
+		query = query.Where("type = ?", filter.Type)
+	}
+
+	if filter.AccountID > 0 {
+		query = query.Where("account_id = ?", filter.AccountID)
+	}
+
+	if filter.StartDate != "" {
+		if startDate, err := time.Parse("2006-01-02", filter.StartDate); err == nil {
+			query = query.Where("date >= ?", startDate)
+		}
+	}
+
+	if filter.EndDate != "" {
+		if endDate, err := time.Parse("2006-01-02", filter.EndDate); err == nil {
+			query = query.Where("date <= ?", endDate)
+		}
+	}
+
+	if filter.MinAmount > 0 {
+		query = query.Where("amount >= ?", filter.MinAmount)
+	}
+
+	if filter.MaxAmount > 0 {
+		query = query.Where("amount <= ?", filter.MaxAmount)
+	}
+
+	if filter.Tags != "" {
+		tagTerm := "%" + filter.Tags + "%"
+		query = query.Where("tags LIKE ?", tagTerm)
+	}
+
+	// Get total count
+	query.Count(&total)
+
+	// Apply sorting
+	sortBy := "date"
+	if filter.SortBy != "" {
+		allowedSortFields := map[string]bool{
+			"date": true, "amount": true, "category": true, "type": true, "created_at": true,
+		}
+		if allowedSortFields[filter.SortBy] {
+			sortBy = filter.SortBy
+		}
+	}
+
+	sortOrder := "DESC"
+	if filter.SortOrder == "asc" {
+		sortOrder = "ASC"
+	}
+
+	query = query.Order(sortBy + " " + sortOrder)
+
+	// Apply pagination
+	page := filter.Page
+	if page < 1 {
+		page = 1
+	}
+
+	pageSize := filter.PageSize
+	if pageSize < 1 || pageSize > 100 {
+		pageSize = 20
+	}
+
+	offset := (page - 1) * pageSize
+	query = query.Offset(offset).Limit(pageSize)
+
+	// Execute query
+	err := query.Find(&transactions).Error
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return transactions, total, nil
+}
+
+// GetTotalSpentByCategory calculates total spent for a category within a date range
+func (r *TransactionRepository) GetTotalSpentByCategory(userID uint, category string, startDate, endDate time.Time) (float64, error) {
+	var total float64
+
+	query := r.db.Model(&models.Transaction{}).
+		Where("user_id = ? AND type = ? AND date >= ? AND date <= ?", userID, "expense", startDate, endDate)
+
+	if category != "" {
+		query = query.Where("category = ?", category)
+	}
+
+	err := query.Select("COALESCE(SUM(amount), 0)").Scan(&total).Error
+	if err != nil {
+		return 0, err
+	}
+
+	return total, nil
+}
+
+// GetTotalIncomeByPeriod calculates total income within a date range
+func (r *TransactionRepository) GetTotalIncomeByPeriod(userID uint, startDate, endDate time.Time) (float64, error) {
+	var total float64
+
+	err := r.db.Model(&models.Transaction{}).
+		Where("user_id = ? AND type = ? AND date >= ? AND date <= ?", userID, "income", startDate, endDate).
+		Select("COALESCE(SUM(amount), 0)").Scan(&total).Error
+	if err != nil {
+		return 0, err
+	}
+
+	return total, nil
 }

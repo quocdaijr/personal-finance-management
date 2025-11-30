@@ -20,59 +20,103 @@ const analyticsService = {
   },
   
   /**
-   * Get spending trends analytics
+   * Get transaction trends analytics (income vs expenses over time)
+   * @param {string} period - Time period (week, month, year)
+   * @returns {Promise<Object>} - Transaction trends data including income and expenses
+   */
+  getTransactionTrends: async (period = 'month') => {
+    try {
+      // FastAPI endpoint for transaction trends
+      return await httpClient.analytics.get(`/analytics/transactions/trends?period=${period}`);
+    } catch (error) {
+      console.error(`Error fetching transaction trends for ${period}:`, error);
+      throw error;
+    }
+  },
+
+  /**
+   * Get spending trends analytics (alias for getTransactionTrends for backward compatibility)
    * @param {string} period - Time period (week, month, year)
    * @returns {Promise<Object>} - Spending trends data
    */
   getSpendingTrends: async (period = 'month') => {
     try {
-      // Flask API endpoint for spending trends
-      return await httpClient.analytics.get(`/analytics/spending-trends?period=${period}`);
+      // Use transaction trends endpoint and transform data for spending trends
+      const data = await httpClient.analytics.get(`/analytics/transactions/trends?period=${period}`);
+      // Transform to spending trends format
+      return {
+        data: (data.trends || []).map(t => ({
+          period: t.period,
+          income: t.income,
+          expense: t.expenses
+        })),
+        total_income: data.total_income,
+        total_expenses: data.total_expenses,
+        average_monthly_income: data.average_monthly_income,
+        average_monthly_expenses: data.average_monthly_expenses
+      };
     } catch (error) {
       console.error(`Error fetching spending trends for ${period}:`, error);
       throw error;
     }
   },
-  
+
   /**
-   * Get income vs expenses analytics
+   * Get income vs expenses analytics (uses transaction trends endpoint)
    * @param {string} period - Time period (week, month, year)
    * @returns {Promise<Object>} - Income vs expenses data
    */
   getIncomeVsExpenses: async (period = 'month') => {
     try {
-      // Flask API endpoint for income vs expenses
-      return await httpClient.analytics.get(`/analytics/income-expenses?period=${period}`);
+      // Use transaction trends endpoint which includes income and expenses
+      const data = await httpClient.analytics.get(`/analytics/transactions/trends?period=${period}`);
+      return {
+        trends: data.trends || [],
+        totalIncome: data.total_income,
+        totalExpenses: data.total_expenses,
+        netBalance: data.total_income - data.total_expenses
+      };
     } catch (error) {
       console.error(`Error fetching income vs expenses for ${period}:`, error);
       throw error;
     }
   },
-  
+
   /**
-   * Get category breakdown analytics
+   * Get category breakdown analytics (uses overview endpoint)
    * @param {string} type - Transaction type (income, expense, all)
    * @param {string} period - Time period (week, month, year)
    * @returns {Promise<Object>} - Category breakdown data
    */
   getCategoryBreakdown: async (type = 'expense', period = 'month') => {
     try {
-      // Flask API endpoint for category breakdown
-      return await httpClient.analytics.get(`/analytics/category-breakdown?type=${type}&period=${period}`);
+      // Use overview endpoint which includes spending by category
+      const data = await httpClient.analytics.get('/analytics/overview');
+      return {
+        categories: data.spending_by_category || [],
+        total: data.expenses_30d || 0
+      };
     } catch (error) {
       console.error(`Error fetching category breakdown for ${type} in ${period}:`, error);
       throw error;
     }
   },
-  
+
   /**
-   * Get budget performance analytics
-   * @returns {Promise<Object>} - Budget performance data
+   * Get budget performance analytics (uses insights endpoint)
+   * @returns {Promise<Object>} - Budget performance data from insights
    */
   getBudgetPerformance: async () => {
     try {
-      // Flask API endpoint for budget performance
-      return await httpClient.analytics.get('/analytics/budget-performance');
+      // Use insights endpoint which includes budget-related insights
+      const data = await httpClient.analytics.get('/analytics/insights');
+      const budgetInsights = (data.insights || []).filter(i =>
+        i.category === 'budget' || i.type === 'budget_alert' || i.type === 'budget_warning'
+      );
+      return {
+        insights: budgetInsights,
+        generatedAt: data.generated_at
+      };
     } catch (error) {
       console.error('Error fetching budget performance:', error);
       throw error;

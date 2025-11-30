@@ -18,6 +18,12 @@ export const API_ENDPOINTS = {
     SETUP_2FA: '/api/auth/setup-2fa',
     VERIFY_2FA: '/api/auth/verify-2fa',
     DISABLE_2FA: '/api/auth/disable-2fa',
+    // Password reset
+    FORGOT_PASSWORD: '/api/auth/forgot-password',
+    RESET_PASSWORD: '/api/auth/reset-password',
+    // Email verification
+    VERIFY_EMAIL: '/api/auth/verify-email',
+    RESEND_VERIFICATION: '/api/auth/resend-verification',
   },
   
   // Accounts
@@ -40,6 +46,8 @@ export const API_ENDPOINTS = {
     DELETE: (id: string) => `/api/transactions/${id}`,
     SUMMARY: '/api/transactions/summary',
     CATEGORIES: '/api/transactions/categories',
+    TRANSFER: '/api/transactions/transfer',
+    EXPORT: '/api/transactions/export',
   },
   
   // Budgets
@@ -52,14 +60,44 @@ export const API_ENDPOINTS = {
     SUMMARY: '/api/budgets/summary',
     PERIODS: '/api/budgets/periods',
   },
-  
+
+  // Goals
+  GOALS: {
+    LIST: '/api/goals',
+    CREATE: '/api/goals',
+    DETAIL: (id: string) => `/api/goals/${id}`,
+    UPDATE: (id: string) => `/api/goals/${id}`,
+    DELETE: (id: string) => `/api/goals/${id}`,
+    SUMMARY: '/api/goals/summary',
+    CATEGORIES: '/api/goals/categories',
+    CONTRIBUTE: (id: string) => `/api/goals/${id}/contribute`,
+  },
+
+  // Recurring Transactions
+  RECURRING: {
+    LIST: '/api/recurring-transactions',
+    CREATE: '/api/recurring-transactions',
+    DETAIL: (id: string) => `/api/recurring-transactions/${id}`,
+    UPDATE: (id: string) => `/api/recurring-transactions/${id}`,
+    DELETE: (id: string) => `/api/recurring-transactions/${id}`,
+    TOGGLE: (id: string) => `/api/recurring-transactions/${id}/toggle`,
+    RUN_NOW: (id: string) => `/api/recurring-transactions/${id}/run`,
+  },
+
+  // Export
+  EXPORT: {
+    TRANSACTIONS_CSV: '/api/export/transactions/csv',
+    TRANSACTIONS_JSON: '/api/export/transactions/json',
+    ACCOUNTS_CSV: '/api/export/accounts/csv',
+  },
+
   // Analytics
   ANALYTICS: {
     OVERVIEW: '/api/analytics/overview',
     TRENDS: '/api/analytics/transactions/trends',
     INSIGHTS: '/api/analytics/insights',
   },
-  
+
   // Health checks
   HEALTH: {
     BACKEND: '/health',

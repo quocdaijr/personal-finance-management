@@ -3,10 +3,12 @@
  * Simple wrapper for making HTTP requests to backend services
  */
 
-// API URLs - hardcoded for now
-// In a production environment, these would be injected during build time
-const BACKEND_URL = 'http://localhost:8080/api';
-const ANALYTICS_URL = 'http://localhost:8000/api';
+import { API_CONFIG } from '../config/api';
+import { keysToCamel, keysToSnake } from '../utils/caseTransform';
+
+// API URLs from centralized config
+const BACKEND_URL = `${API_CONFIG.BASE_URL}/api`;
+const ANALYTICS_URL = `${API_CONFIG.ANALYTICS_URL}/api`;
 
 /**
  * Get authentication headers
@@ -18,10 +20,10 @@ const getAuthHeaders = (isAnalytics = false) => {
     'Content-Type': 'application/json'
   };
 
-  // Get the appropriate token
+  // Get the appropriate token - use 'token' to match AuthContext
   const token = isAnalytics
     ? localStorage.getItem('analytics_token')
-    : localStorage.getItem('auth_token');
+    : localStorage.getItem('token');
 
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
@@ -37,32 +39,34 @@ const getAuthHeaders = (isAnalytics = false) => {
  */
 const handleResponse = async (response) => {
   if (!response.ok) {
-    // Handle 401 Unauthorized
-    if (response.status === 401) {
-      // Clear tokens and redirect to login
-      localStorage.removeItem('auth_token');
-      localStorage.removeItem('analytics_token');
-      window.location.href = '/login';
-    }
-
     // Try to parse error message
     let errorMessage;
+    let errorData;
     try {
-      const errorData = await response.json();
+      errorData = await response.json();
       errorMessage = errorData.message || errorData.error || `Error: ${response.status}`;
     } catch (e) {
       errorMessage = `Error: ${response.status} ${response.statusText}`;
     }
 
-    throw new Error(errorMessage);
+    // Create an error object with response info for the axios interceptor to handle
+    const error = new Error(errorMessage);
+    error.response = { status: response.status, data: errorData };
+    throw error;
   }
 
   // Check if response has content
   const contentType = response.headers.get('content-type');
   if (contentType && contentType.includes('application/json')) {
     const data = await response.json();
+    // Handle null responses (e.g., empty notification lists)
+    if (data === null) {
+      return [];
+    }
     // Handle both direct data and data wrapped in a data field (common in Gin)
-    return data.data !== undefined ? data.data : data;
+    const responseData = data.data !== undefined ? data.data : data;
+    // Transform snake_case keys to camelCase for frontend
+    return keysToCamel(responseData);
   }
 
   return response.text();
@@ -98,7 +102,7 @@ const httpClient = {
       const response = await fetch(`${BACKEND_URL}${endpoint}`, {
         method: 'POST',
         headers: getAuthHeaders(),
-        body: JSON.stringify(data)
+        body: JSON.stringify(keysToSnake(data))
       });
 
       return handleResponse(response);
@@ -114,7 +118,23 @@ const httpClient = {
       const response = await fetch(`${BACKEND_URL}${endpoint}`, {
         method: 'PUT',
         headers: getAuthHeaders(),
-        body: JSON.stringify(data)
+        body: JSON.stringify(keysToSnake(data))
+      });
+
+      return handleResponse(response);
+    },
+
+    /**
+     * Make PATCH request to backend API
+     * @param {string} endpoint - API endpoint
+     * @param {Object} data - Request data
+     * @returns {Promise<any>} - Response data
+     */
+    patch: async (endpoint, data = {}) => {
+      const response = await fetch(`${BACKEND_URL}${endpoint}`, {
+        method: 'PATCH',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(keysToSnake(data))
       });
 
       return handleResponse(response);
@@ -161,7 +181,7 @@ const httpClient = {
       const response = await fetch(`${ANALYTICS_URL}${endpoint}`, {
         method: 'POST',
         headers: getAuthHeaders(true),
-        body: JSON.stringify(data)
+        body: JSON.stringify(keysToSnake(data))
       });
 
       return handleResponse(response);

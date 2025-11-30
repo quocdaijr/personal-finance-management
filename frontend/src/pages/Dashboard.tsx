@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -6,6 +6,8 @@ import {
   Card,
   CardContent,
   Button,
+  CircularProgress,
+  Skeleton,
 } from '@mui/material';
 import {
   AccountBalanceWallet,
@@ -14,9 +16,13 @@ import {
   Savings,
   Add,
   MoreVert,
+  Flag,
+  Repeat,
 } from '@mui/icons-material';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
+import { useUserPreferences } from '../contexts/UserPreferencesContext';
 import { PageLayout } from '../components/layout';
 import {
   SummaryCard,
@@ -25,17 +31,92 @@ import {
   FinancialChart,
   RecentTransactions,
 } from '../components/dashboard';
+import accountService from '../services/accountService';
+import transactionService from '../services/transactionService';
+import goalService from '../services/goalService';
+import { formatCurrency, formatDate } from '../utils/formatters';
+
+interface FinancialData {
+  totalBalance: number;
+  totalSpending: number;
+  totalSaved: number;
+  monthlyIncome: number;
+  spendingTrend: string;
+  savingsTrend: string;
+}
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
   const { theme } = useTheme();
+  const { preferences } = useUserPreferences();
+  const navigate = useNavigate();
 
-  // Mock financial data - in real app this would come from API
-  const financialData = {
-    totalBalance: 25420.50,
-    totalSpending: 3240.75,
-    totalSaved: 8950.25,
-    monthlyIncome: 12500.00,
+  const [loading, setLoading] = useState(true);
+  const [financialData, setFinancialData] = useState<FinancialData>({
+    totalBalance: 0,
+    totalSpending: 0,
+    totalSaved: 0,
+    monthlyIncome: 0,
+    spendingTrend: '0%',
+    savingsTrend: '0%',
+  });
+  const [recentActivity, setRecentActivity] = useState<any[]>([]);
+  const [goalsProgress, setGoalsProgress] = useState<any>(null);
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, [preferences]);
+
+  const fetchDashboardData = async () => {
+    setLoading(true);
+    try {
+      // Fetch data in parallel
+      const [accountsRes, transactionSummaryRes, goalsRes] = await Promise.all([
+        accountService.getSummary().catch(() => null),
+        transactionService.getSummary('month').catch(() => null),
+        goalService.getSummary().catch(() => null),
+      ]);
+
+      // Process accounts data
+      const totalBalance = accountsRes?.totalBalance || 0;
+
+      // Process transactions data
+      const totalSpending = transactionSummaryRes?.totalExpense || 0;
+      const monthlyIncome = transactionSummaryRes?.totalIncome || 0;
+      const totalSaved = monthlyIncome - totalSpending;
+
+      setFinancialData({
+        totalBalance,
+        totalSpending,
+        totalSaved: totalSaved > 0 ? totalSaved : 0,
+        monthlyIncome,
+        spendingTrend: transactionSummaryRes?.expenseTrend || '-0%',
+        savingsTrend: totalSaved > 0 ? '+' + ((totalSaved / monthlyIncome) * 100).toFixed(1) + '%' : '0%',
+      });
+
+      // Process goals data
+      if (goalsRes) {
+        setGoalsProgress(goalsRes);
+      }
+
+      // Fetch recent transactions for activity
+      try {
+        const transactions = await transactionService.getAll();
+        setRecentActivity((transactions || []).slice(0, 4).map((t: any) => ({
+          action: t.description,
+          time: formatDate(new Date(t.date), preferences.dateFormat),
+          amount: t.type === 'income'
+            ? `+${formatCurrency(t.amount, preferences.currency)}`
+            : `-${formatCurrency(t.amount, preferences.currency)}`,
+          type: t.type,
+        })));
+      } catch {}
+
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -84,7 +165,7 @@ const Dashboard: React.FC = () => {
               <Grid item xs={12} sm={4}>
                 <SummaryCard
                   title="Total Balance"
-                  value={`$${financialData.totalBalance.toLocaleString()}`}
+                  value={formatCurrency(financialData.totalBalance, preferences.currency)}
                   subtitle="All accounts"
                   icon={<AccountBalanceWallet />}
                   color="primary"
@@ -97,7 +178,7 @@ const Dashboard: React.FC = () => {
               <Grid item xs={12} sm={4}>
                 <SummaryCard
                   title="Total Spending"
-                  value={`$${financialData.totalSpending.toLocaleString()}`}
+                  value={formatCurrency(financialData.totalSpending, preferences.currency)}
                   subtitle="This month"
                   icon={<TrendingDown />}
                   color="error"
@@ -110,7 +191,7 @@ const Dashboard: React.FC = () => {
               <Grid item xs={12} sm={4}>
                 <SummaryCard
                   title="Total Saved"
-                  value={`$${financialData.totalSaved.toLocaleString()}`}
+                  value={formatCurrency(financialData.totalSaved, preferences.currency)}
                   subtitle="This month"
                   icon={<Savings />}
                   color="success"
@@ -171,13 +252,14 @@ const Dashboard: React.FC = () => {
 
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                   {[
-                    { title: 'Send Money', subtitle: 'Transfer to contacts' },
-                    { title: 'Pay Bills', subtitle: 'Utilities & services' },
-                    { title: 'Add Transaction', subtitle: 'Manual entry' },
-                    { title: 'View Reports', subtitle: 'Financial insights' },
+                    { title: 'Add Transaction', subtitle: 'Manual entry', path: '/transactions' },
+                    { title: 'View Goals', subtitle: 'Track savings goals', path: '/goals' },
+                    { title: 'Recurring', subtitle: 'Manage recurring', path: '/recurring' },
+                    { title: 'View Reports', subtitle: 'Financial insights', path: '/reports' },
                   ].map((action, index) => (
                     <Box
                       key={index}
+                      onClick={() => navigate(action.path)}
                       sx={{
                         p: 2,
                         background: theme.background.secondary,
@@ -244,12 +326,9 @@ const Dashboard: React.FC = () => {
                 </Box>
 
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                  {[
-                    { action: 'Card payment received', time: '2 hours ago', amount: '+$1,250', type: 'income' },
-                    { action: 'Transfer to savings', time: '1 day ago', amount: '-$500', type: 'expense' },
-                    { action: 'Grocery shopping', time: '2 days ago', amount: '-$85.50', type: 'expense' },
-                    { action: 'Salary deposit', time: '3 days ago', amount: '+$3,200', type: 'income' },
-                  ].map((activity, index) => (
+                  {(recentActivity.length > 0 ? recentActivity : [
+                    { action: 'No recent activity', time: '', amount: '', type: 'none' },
+                  ]).map((activity, index) => (
                     <Box
                       key={index}
                       sx={{

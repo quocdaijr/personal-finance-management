@@ -12,6 +12,8 @@ import {
   MoreVert,
 } from '@mui/icons-material';
 import { alpha } from '@mui/material/styles';
+import { useUserPreferences } from '../../contexts/UserPreferencesContext';
+import { formatCurrency as formatCurrencyUtil } from '../../utils/formatters';
 
 interface TransferData {
   id: string;
@@ -37,6 +39,7 @@ const ScheduledTransfers: React.FC<ScheduledTransfersProps> = ({
   onTransferClick,
   onMoreClick,
 }) => {
+  const { preferences } = useUserPreferences();
   // Default transfers data matching Figma design
   const defaultTransfers: TransferData[] = [
     {
@@ -62,11 +65,8 @@ const ScheduledTransfers: React.FC<ScheduledTransfersProps> = ({
   const displayTransfers = transfers.length > 0 ? transfers : defaultTransfers;
 
   // Format currency
-  const formatCurrency = (amount: number, currency: string = 'USD') => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: currency,
-    }).format(amount);
+  const formatCurrency = (amount: number) => {
+    return formatCurrencyUtil(amount, preferences.currency);
   };
 
   // Generate avatar color based on name

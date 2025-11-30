@@ -1,12 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { 
-  Container, 
-  Box, 
-  Typography, 
-  TextField, 
-  Button, 
-  Alert, 
+import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
+import {
+  Container,
+  Box,
+  Typography,
+  TextField,
+  Button,
+  Alert,
   Paper,
   InputAdornment,
   IconButton
@@ -21,20 +21,27 @@ const Login: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const { login, verify2FA, isAuthenticated, loading, error, requires2FA, tempUsername, clearError } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const hasRedirected = useRef(false);
 
-  // Redirect if already authenticated
+  // Get the page user was trying to access
+  const from = (location.state as { from?: { pathname: string } })?.from?.pathname || '/dashboard';
+
+  // Redirect if already authenticated (only once)
   useEffect(() => {
-    if (isAuthenticated) {
-      navigate('/dashboard');
+    if (isAuthenticated && !hasRedirected.current) {
+      hasRedirected.current = true;
+      navigate(from, { replace: true });
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, navigate, from]);
 
   // Clear error when unmounting
   useEffect(() => {
     return () => {
       clearError();
     };
-  }, [clearError]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

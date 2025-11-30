@@ -360,22 +360,13 @@ const TransactionFormEnhanced: React.FC<TransactionFormEnhancedProps> = ({
                   label="Date"
                   value={formData.date}
                   onChange={(date) => handleChange('date', date)}
-                  renderInput={(params) => (
-                    <TextField
-                      {...params}
-                      fullWidth
-                      error={!!errors.date}
-                      helperText={errors.date}
-                      InputProps={{
-                        ...params.InputProps,
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <CalendarToday sx={{ color: theme.text.secondary }} />
-                          </InputAdornment>
-                        ),
-                      }}
-                    />
-                  )}
+                  slotProps={{
+                    textField: {
+                      fullWidth: true,
+                      error: !!errors.date,
+                      helperText: errors.date,
+                    },
+                  }}
                 />
               </LocalizationProvider>
             </Grid>

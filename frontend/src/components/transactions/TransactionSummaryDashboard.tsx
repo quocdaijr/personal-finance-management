@@ -19,6 +19,8 @@ import {
   CalendarToday,
 } from '@mui/icons-material';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useUserPreferences } from '../../contexts/UserPreferencesContext';
+import { formatCurrency as formatCurrencyUtil } from '../../utils/formatters';
 import { TransactionSummaryDashboardProps, TimePeriod } from '../../types/transaction';
 
 const TransactionSummaryDashboard: React.FC<TransactionSummaryDashboardProps> = ({
@@ -28,6 +30,7 @@ const TransactionSummaryDashboard: React.FC<TransactionSummaryDashboardProps> = 
   loading = false,
 }) => {
   const { theme } = useTheme();
+  const { preferences } = useUserPreferences();
 
   const timePeriods: TimePeriod[] = [
     { value: 'week', label: 'Week' },
@@ -37,10 +40,7 @@ const TransactionSummaryDashboard: React.FC<TransactionSummaryDashboardProps> = 
   ];
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(amount);
+    return formatCurrencyUtil(amount, preferences.currency);
   };
 
   const formatPercentage = (value: number) => {

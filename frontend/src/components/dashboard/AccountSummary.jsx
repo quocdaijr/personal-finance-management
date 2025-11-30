@@ -1,20 +1,23 @@
 import React from 'react';
-import { 
-  Box, 
-  Card, 
-  CardContent, 
-  Typography, 
-  List, 
-  ListItem, 
-  ListItemText, 
+import {
+  Box,
+  Card,
+  CardContent,
+  Typography,
+  List,
+  ListItem,
+  ListItemText,
   ListItemSecondaryAction,
   Divider,
   Chip,
   Button
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
+import { useUserPreferences } from '../../contexts/UserPreferencesContext';
+import { formatCurrency as formatCurrencyUtil } from '../../utils/formatters';
 
 const AccountSummary = ({ accounts, onAddAccount, onViewAccount }) => {
+  const { preferences } = useUserPreferences();
   // Get account type label
   const getAccountTypeLabel = (type) => {
     const types = {
@@ -30,11 +33,8 @@ const AccountSummary = ({ accounts, onAddAccount, onViewAccount }) => {
   };
   
   // Format currency
-  const formatCurrency = (amount, currency = 'USD') => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: currency
-    }).format(amount);
+  const formatCurrency = (amount) => {
+    return formatCurrencyUtil(amount, preferences.currency);
   };
 
   return (
