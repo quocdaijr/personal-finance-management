@@ -30,6 +30,8 @@ You can use the following rebase operations:
 ## Footer
 End of document - Version 2.0
 
+Test auto review commit
+
 ---
 *This file has been updated through multiple commits for rebase testing.*
 *Last modified: August 2025*
