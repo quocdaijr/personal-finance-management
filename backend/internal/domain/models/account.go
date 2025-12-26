@@ -8,12 +8,12 @@ import (
 // Account represents a financial account
 type Account struct {
 	ID        uint      `gorm:"primaryKey" json:"id"`
-	UserID    uint      `gorm:"not null" json:"user_id"`
+	UserID    uint      `gorm:"not null;index:idx_accounts_user_id" json:"user_id"`
 	Name      string    `gorm:"not null" json:"name"`
-	Type      string    `gorm:"not null" json:"type"` // checking, savings, credit, investment, etc.
+	Type      string    `gorm:"not null;index:idx_accounts_type" json:"type"` // checking, savings, credit, investment, etc.
 	Balance   float64   `gorm:"not null" json:"balance"`
 	Currency  string    `gorm:"not null;default:USD" json:"currency"`
-	IsDefault bool      `gorm:"not null;default:false" json:"is_default"`
+	IsDefault bool      `gorm:"not null;default:false;index:idx_accounts_is_default" json:"is_default"`
 	CreatedAt time.Time `gorm:"autoCreateTime" json:"created_at"`
 	UpdatedAt time.Time `gorm:"autoUpdateTime" json:"updated_at"`
 }

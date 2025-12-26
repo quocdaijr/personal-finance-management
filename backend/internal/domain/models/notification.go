@@ -28,18 +28,18 @@ const (
 // Notification represents a user notification
 type Notification struct {
 	ID          uint                 `gorm:"primaryKey" json:"id"`
-	UserID      uint                 `gorm:"not null;index" json:"user_id"`
-	Type        NotificationType     `gorm:"not null" json:"type"`
+	UserID      uint                 `gorm:"not null;index:idx_notifications_user_id;index:idx_notifications_user_read,priority:1" json:"user_id"`
+	Type        NotificationType     `gorm:"not null;index:idx_notifications_type" json:"type"`
 	Title       string               `gorm:"not null" json:"title"`
 	Message     string               `gorm:"not null" json:"message"`
-	Priority    NotificationPriority `gorm:"default:'medium'" json:"priority"`
-	IsRead      bool                 `gorm:"default:false" json:"is_read"`
+	Priority    NotificationPriority `gorm:"default:'medium';index:idx_notifications_priority" json:"priority"`
+	IsRead      bool                 `gorm:"default:false;index:idx_notifications_is_read;index:idx_notifications_user_read,priority:2" json:"is_read"`
 	ReadAt      *time.Time           `json:"read_at"`
 	ActionURL   string               `json:"action_url"`    // Link to related resource
 	RelatedID   *uint                `json:"related_id"`    // ID of related entity (budget, goal, etc.)
 	RelatedType string               `json:"related_type"`  // Type of related entity
 	ExpiresAt   *time.Time           `json:"expires_at"`    // When notification should be dismissed
-	CreatedAt   time.Time            `gorm:"autoCreateTime" json:"created_at"`
+	CreatedAt   time.Time            `gorm:"autoCreateTime;index:idx_notifications_created_at" json:"created_at"`
 	UpdatedAt   time.Time            `gorm:"autoUpdateTime" json:"updated_at"`
 }
 
@@ -81,4 +81,3 @@ type NotificationSummary struct {
 	UnreadCount  int `json:"unread_count"`
 	HighPriority int `json:"high_priority"`
 }
-

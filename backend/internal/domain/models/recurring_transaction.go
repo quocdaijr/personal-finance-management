@@ -7,27 +7,27 @@ import (
 // RecurringTransaction represents a recurring/scheduled transaction
 type RecurringTransaction struct {
 	ID          uint      `gorm:"primaryKey" json:"id"`
-	UserID      uint      `gorm:"not null;index" json:"user_id"`
+	UserID      uint      `gorm:"not null;index:idx_recurring_user_id" json:"user_id"`
 	Amount      float64   `gorm:"not null" json:"amount"`
 	Description string    `json:"description"`
-	Category    string    `json:"category"`
-	Type        string    `gorm:"not null" json:"type"` // 'income' or 'expense'
-	AccountID   uint      `gorm:"not null" json:"account_id"`
+	Category    string    `gorm:"index:idx_recurring_category" json:"category"`
+	Type        string    `gorm:"not null;index:idx_recurring_type" json:"type"` // 'income' or 'expense'
+	AccountID   uint      `gorm:"not null;index:idx_recurring_account_id" json:"account_id"`
 	Tags        string    `json:"tags"`
 
 	// Recurrence settings
-	Frequency     string    `gorm:"not null" json:"frequency"` // daily, weekly, monthly, yearly
+	Frequency     string    `gorm:"not null;index:idx_recurring_frequency" json:"frequency"` // daily, weekly, monthly, yearly
 	Interval      int       `gorm:"default:1" json:"interval"` // Every X frequency units
 	DayOfWeek     int       `json:"day_of_week"`               // 0-6 for weekly (0=Sunday)
 	DayOfMonth    int       `json:"day_of_month"`              // 1-31 for monthly
 	MonthOfYear   int       `json:"month_of_year"`             // 1-12 for yearly
 	StartDate     time.Time `gorm:"not null" json:"start_date"`
 	EndDate       *time.Time `json:"end_date"`                  // Optional end date
-	NextRunDate   time.Time `gorm:"not null" json:"next_run_date"`
+	NextRunDate   time.Time `gorm:"not null;index:idx_recurring_next_run" json:"next_run_date"`
 	LastRunDate   *time.Time `json:"last_run_date"`
 
 	// Status
-	IsActive      bool      `gorm:"default:true" json:"is_active"`
+	IsActive      bool      `gorm:"default:true;index:idx_recurring_is_active" json:"is_active"`
 	TotalRuns     int       `gorm:"default:0" json:"total_runs"`
 	MaxRuns       int       `json:"max_runs"` // 0 = unlimited
 
@@ -137,4 +137,3 @@ func (r *RecurringTransaction) CalculateNextRunDate() time.Time {
 		return baseDate.AddDate(0, 1, 0) // Default monthly
 	}
 }
-

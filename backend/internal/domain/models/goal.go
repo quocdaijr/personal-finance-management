@@ -7,21 +7,21 @@ import (
 // Goal represents a financial savings goal
 type Goal struct {
 	ID            uint       `gorm:"primaryKey" json:"id"`
-	UserID        uint       `gorm:"not null;index" json:"user_id"`
+	UserID        uint       `gorm:"not null;index:idx_goals_user_id" json:"user_id"`
 	Name          string     `gorm:"not null" json:"name"`
 	Description   string     `json:"description"`
 	TargetAmount  float64    `gorm:"not null" json:"target_amount"`
 	CurrentAmount float64    `gorm:"default:0" json:"current_amount"`
 	Currency      string     `gorm:"default:'USD'" json:"currency"`
-	Category      string     `json:"category"` // e.g., vacation, emergency, car, home, education
+	Category      string     `gorm:"index:idx_goals_category" json:"category"` // e.g., vacation, emergency, car, home, education
 	Icon          string     `json:"icon"`     // Emoji or icon name
 	Color         string     `json:"color"`    // Hex color for UI display
-	TargetDate    *time.Time `json:"target_date"`
+	TargetDate    *time.Time `gorm:"index:idx_goals_target_date" json:"target_date"`
 	StartDate     time.Time  `gorm:"not null" json:"start_date"`
 	AccountID     *uint      `json:"account_id"` // Optional linked account
-	IsCompleted   bool       `gorm:"default:false" json:"is_completed"`
+	IsCompleted   bool       `gorm:"default:false;index:idx_goals_is_completed" json:"is_completed"`
 	CompletedAt   *time.Time `json:"completed_at"`
-	Priority      int        `gorm:"default:0" json:"priority"` // 0=low, 1=medium, 2=high
+	Priority      int        `gorm:"default:0;index:idx_goals_priority" json:"priority"` // 0=low, 1=medium, 2=high
 	CreatedAt     time.Time  `gorm:"autoCreateTime" json:"created_at"`
 	UpdatedAt     time.Time  `gorm:"autoUpdateTime" json:"updated_at"`
 }
@@ -132,4 +132,3 @@ func (g *Goal) ToResponse() *GoalResponse {
 		UpdatedAt:       g.UpdatedAt,
 	}
 }
-
