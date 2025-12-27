@@ -280,6 +280,18 @@ def get_financial_insights(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error generating insights: {str(e)}")
 
+# ============================================================================
+# SPRINT 4: Advanced Analytics & Reporting
+# ============================================================================
+
+# Import Sprint 4 router
+try:
+    from main_sprint4 import router as sprint4_router
+    app.include_router(sprint4_router)
+    print("✓ Sprint 4 advanced analytics endpoints loaded")
+except ImportError as e:
+    print(f"⚠ Sprint 4 endpoints not available: {e}")
+
 if __name__ == '__main__':
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)

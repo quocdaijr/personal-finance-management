@@ -8,17 +8,20 @@ import (
 
 // Transaction represents a financial transaction
 type Transaction struct {
-	ID          uint      `gorm:"primaryKey" json:"id"`
-	UserID      uint      `gorm:"not null;index:idx_transactions_user_id;index:idx_transactions_user_date,priority:1" json:"user_id"`
-	Amount      float64   `gorm:"not null" json:"amount"`
-	Description string    `json:"description"`
-	Category    string    `gorm:"index:idx_transactions_category" json:"category"`
-	Type        string    `gorm:"not null;index:idx_transactions_type" json:"type"` // 'income' or 'expense'
-	Date        time.Time `gorm:"not null;index:idx_transactions_date;index:idx_transactions_user_date,priority:2" json:"date"`
-	AccountID   uint      `gorm:"not null;index:idx_transactions_account_id" json:"account_id"`
-	Tags        string    `json:"tags"` // Comma-separated tags
-	CreatedAt   time.Time `gorm:"autoCreateTime;index:idx_transactions_created_at" json:"created_at"`
-	UpdatedAt   time.Time `gorm:"autoUpdateTime" json:"updated_at"`
+	ID             uint      `gorm:"primaryKey" json:"id"`
+	UserID         uint      `gorm:"not null;index:idx_transactions_user_id;index:idx_transactions_user_date,priority:1" json:"user_id"`
+	Amount         float64   `gorm:"not null" json:"amount"`
+	Description    string    `json:"description"`
+	Category       string    `gorm:"index:idx_transactions_category" json:"category"`
+	Type           string    `gorm:"not null;index:idx_transactions_type" json:"type"` // 'income' or 'expense'
+	Date           time.Time `gorm:"not null;index:idx_transactions_date;index:idx_transactions_user_date,priority:2" json:"date"`
+	AccountID      uint      `gorm:"not null;index:idx_transactions_account_id" json:"account_id"`
+	Tags           string    `json:"tags"` // Comma-separated tags
+	TaxCategoryID  *uint     `gorm:"index:idx_transactions_tax_category_id" json:"tax_category_id"` // Sprint 4: Tax category
+	OrganizationID *uint     `gorm:"index:idx_transactions_organization_id" json:"organization_id"` // For organization expenses
+	DepartmentID   *uint     `gorm:"index:idx_transactions_department_id" json:"department_id"` // For department expenses
+	CreatedAt      time.Time `gorm:"autoCreateTime;index:idx_transactions_created_at" json:"created_at"`
+	UpdatedAt      time.Time `gorm:"autoUpdateTime" json:"updated_at"`
 }
 
 // TransactionResponse is the response model for a transaction
