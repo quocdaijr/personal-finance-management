@@ -328,7 +328,7 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({
                       fontSize: '1.1rem',
                     }}
                   >
-                    {transaction.type === 'income' ? '+' : '-'} {formatCurrency(transaction.amount, transaction.currency)}
+                    {transaction.type === 'income' ? '+' : '-'} {formatCurrency(transaction.amount)}
                   </Typography>
 
                   <IconButton

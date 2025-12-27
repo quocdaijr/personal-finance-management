@@ -202,7 +202,7 @@ const ScheduledTransfers: React.FC<ScheduledTransfersProps> = ({
                       fontSize: '1.1rem',
                     }}
                   >
-                    - {formatCurrency(transfer.amount, transfer.currency)}
+                    - {formatCurrency(transfer.amount)}
                   </Typography>
 
                   <IconButton

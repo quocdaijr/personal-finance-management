@@ -1,9 +1,22 @@
-fastapi
-uvicorn
-pandas
-scikit-learn
-sqlalchemy
-psycopg2-binary
-pyjwt
-python-multipart
-python-dotenv
+# Python Package Dependencies for Analytics Service
+# Last updated: December 2025
+# Python version: 3.13
+
+# Web Framework
+fastapi==0.127.0
+uvicorn==0.40.0
+
+# Data Analysis
+pandas==2.3.3
+scikit-learn==1.8.0
+
+# Database
+sqlalchemy==2.0.45
+psycopg2-binary==2.9.11
+
+# Authentication
+pyjwt==2.10.1
+
+# Utilities
+python-multipart==0.0.20
+python-dotenv==1.0.1
