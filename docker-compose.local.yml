@@ -1,4 +1,18 @@
 services:
+  redis:
+    image: redis:7-alpine
+    container_name: finance-management-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
   backend:
     build: ./backend
     container_name: finance-management-backend
@@ -16,8 +30,12 @@ services:
       - LOG_FORMAT=${LOG_FORMAT:-text}
       - LOG_OUTPUT=${LOG_OUTPUT:-stdout}
       - LOG_FILE_PATH=${LOG_FILE_PATH:-logs/app.log}
+      - REDIS_ADDR=redis:6379
+      - REDIS_PASSWORD=
+      - REDIS_DB=0
     depends_on:
       - db
+      - redis
 
   analytics:
     build: ./analytics
@@ -75,3 +93,6 @@ services:
       - "5432:5432"
     volumes:
       - ./docker/db/data:/var/lib/postgresql/data
+
+volumes:
+  redis_data:

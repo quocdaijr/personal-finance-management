@@ -9,6 +9,7 @@ import (
 	"github.com/quocdaijr/finance-management-backend/internal/api/handlers"
 	"github.com/quocdaijr/finance-management-backend/internal/api/middleware"
 	"github.com/quocdaijr/finance-management-backend/internal/config"
+	pkgMiddleware "github.com/quocdaijr/finance-management-backend/pkg/middleware"
 	"github.com/quocdaijr/finance-management-backend/internal/domain/models"
 	"github.com/quocdaijr/finance-management-backend/internal/domain/services"
 	"github.com/quocdaijr/finance-management-backend/internal/infrastructure/database"
@@ -125,6 +126,12 @@ func main() {
 	router.Use(middleware.ValidateContentType())
 	router.Use(middleware.RateLimitMiddleware())
 
+	// Add API versioning middleware
+	router.Use(pkgMiddleware.APIVersion())
+
+	// Add legacy redirect middleware (redirect /api/* to /api/v1/*)
+	router.Use(pkgMiddleware.LegacyRedirect())
+
 	// Setup routes
 	setupRoutes(router, cfg, authHandler, accountHandler, transactionHandler, budgetHandler, userHandler, exportHandler, importHandler, recurringHandler, goalHandler, notificationHandler, categoryHandler, balanceHistoryHandler, currencyHandler, searchHandler)
 
@@ -154,13 +161,13 @@ func setupRoutes(
 	currencyHandler *handlers.CurrencyHandler,
 	searchHandler *handlers.SearchHandler,
 ) {
-	// Health check endpoint
+	// Health check endpoint (no versioning needed)
 	router.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "ok"})
 	})
 
-	// API routes
-	api := router.Group("/api")
+	// API v1 routes
+	api := router.Group("/api/v1")
 	{
 		// Auth routes (no authentication required)
 		auth := api.Group("/auth")

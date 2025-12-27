@@ -248,3 +248,103 @@ func (r *TransactionRepository) GetTotalIncomeByPeriod(userID uint, startDate, e
 
 	return total, nil
 }
+
+// GetPaginated returns paginated transactions with advanced filters
+func (r *TransactionRepository) GetPaginated(
+	userID uint,
+	filter *models.TransactionFilterRequest,
+) ([]models.Transaction, int64, error) {
+	var transactions []models.Transaction
+	var total int64
+
+	// Base query
+	query := r.db.Model(&models.Transaction{}).Where("user_id = ?", userID)
+
+	// Apply date filters
+	if filter.StartDate != nil {
+		query = query.Where("date >= ?", filter.StartDate)
+	}
+	if filter.EndDate != nil {
+		query = query.Where("date <= ?", filter.EndDate)
+	}
+
+	// Apply amount filters
+	if filter.MinAmount != nil {
+		query = query.Where("amount >= ?", *filter.MinAmount)
+	}
+	if filter.MaxAmount != nil {
+		query = query.Where("amount <= ?", *filter.MaxAmount)
+	}
+
+	// Apply category filters (support both single and multiple categories)
+	if len(filter.Categories) > 0 {
+		query = query.Where("category IN ?", filter.Categories)
+	} else if filter.Category != "" {
+		query = query.Where("category = ?", filter.Category)
+	}
+
+	// Apply type filter
+	if filter.Type != "" {
+		query = query.Where("type = ?", filter.Type)
+	}
+
+	// Apply account filter
+	if filter.AccountID != nil {
+		query = query.Where("account_id = ?", *filter.AccountID)
+	}
+
+	// Apply search filter (search in description, category, and tags)
+	if filter.Search != "" {
+		searchTerm := "%" + strings.ToLower(filter.Search) + "%"
+		query = query.Where(
+			"LOWER(description) LIKE ? OR LOWER(category) LIKE ? OR LOWER(tags) LIKE ?",
+			searchTerm, searchTerm, searchTerm,
+		)
+	}
+
+	// Apply tags filter
+	if len(filter.Tags) > 0 {
+		for _, tag := range filter.Tags {
+			tagTerm := "%" + tag + "%"
+			query = query.Where("tags LIKE ?", tagTerm)
+		}
+	}
+
+	// Count total matching records
+	countQuery := query
+	if err := countQuery.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	// Apply sorting
+	sortBy := filter.SortBy
+	if sortBy == "" {
+		sortBy = "date"
+	}
+
+	// Validate sortBy to prevent SQL injection
+	allowedSortFields := map[string]bool{
+		"date": true, "amount": true, "category": true, "type": true, "created_at": true,
+	}
+	if !allowedSortFields[sortBy] {
+		sortBy = "date"
+	}
+
+	sortOrder := strings.ToUpper(filter.SortOrder)
+	if sortOrder != "ASC" && sortOrder != "DESC" {
+		sortOrder = "DESC"
+	}
+
+	query = query.Order(sortBy + " " + sortOrder)
+
+	// Apply pagination
+	offset := filter.GetOffset()
+	query = query.Offset(offset).Limit(filter.PageSize)
+
+	// Execute query
+	if err := query.Find(&transactions).Error; err != nil {
+		return nil, 0, err
+	}
+
+	return transactions, total, nil
+}

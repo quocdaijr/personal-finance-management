@@ -7,14 +7,91 @@ import httpClient from './httpClient';
  */
 const transactionService = {
   /**
-   * Get all transactions
-   * @returns {Promise<Array>} - List of transactions
+   * Get all transactions with pagination and filtering
+   * @param {Object} filters - Optional filters
+   * @param {number} filters.page - Page number (default: 1)
+   * @param {number} filters.page_size - Page size (default: 20, max: 100)
+   * @param {string} filters.start_date - Start date (YYYY-MM-DD)
+   * @param {string} filters.end_date - End date (YYYY-MM-DD)
+   * @param {number} filters.min_amount - Minimum amount
+   * @param {number} filters.max_amount - Maximum amount
+   * @param {Array<string>} filters.categories - Array of categories
+   * @param {string} filters.category - Single category
+   * @param {string} filters.type - Transaction type (income, expense, transfer)
+   * @param {number} filters.account_id - Account ID
+   * @param {string} filters.search - Search query
+   * @param {Array<string>} filters.tags - Array of tags
+   * @param {string} filters.sort_by - Sort field (date, amount, category, type, created_at)
+   * @param {string} filters.sort_order - Sort order (asc, desc)
+   * @returns {Promise<Object>} - Paginated response { data, pagination }
    */
-  getAll: async () => {
+  getAll: async (filters = {}) => {
     try {
-      // Gin backend endpoint for transactions
-      const data = await httpClient.backend.get('/transactions');
-      return data.map(transaction => Transaction.fromJSON(transaction));
+      const params = new URLSearchParams();
+
+      // Pagination parameters
+      if (filters.page) params.append('page', filters.page);
+      if (filters.page_size) params.append('page_size', filters.page_size);
+
+      // Date filters
+      if (filters.start_date) params.append('start_date', filters.start_date);
+      if (filters.end_date) params.append('end_date', filters.end_date);
+
+      // Amount filters
+      if (filters.min_amount !== undefined) params.append('min_amount', filters.min_amount);
+      if (filters.max_amount !== undefined) params.append('max_amount', filters.max_amount);
+
+      // Category filters (support both single and multiple)
+      if (filters.categories?.length) {
+        filters.categories.forEach(cat => params.append('categories', cat));
+      } else if (filters.category) {
+        params.append('category', filters.category);
+      }
+
+      // Type filter
+      if (filters.type) params.append('type', filters.type);
+
+      // Account filter
+      if (filters.account_id) params.append('account_id', filters.account_id);
+
+      // Search query
+      if (filters.search) params.append('search', filters.search);
+
+      // Tags filter
+      if (filters.tags?.length) {
+        filters.tags.forEach(tag => params.append('tags', tag));
+      }
+
+      // Sorting
+      if (filters.sort_by) params.append('sort_by', filters.sort_by);
+      if (filters.sort_order) params.append('sort_order', filters.sort_order);
+
+      // Gin backend endpoint for transactions with pagination
+      const response = await httpClient.backend.get(`/transactions?${params.toString()}`);
+
+      // Handle both paginated and non-paginated responses for backward compatibility
+      if (response.data && Array.isArray(response.data)) {
+        return {
+          data: response.data.map(transaction => Transaction.fromJSON(transaction)),
+          total: response.total || response.data.length,
+          page: response.page || 1,
+          page_size: response.page_size || response.data.length,
+          total_pages: response.total_pages || 1
+        };
+      }
+
+      // Legacy format: direct array response
+      if (Array.isArray(response)) {
+        return {
+          data: response.map(transaction => Transaction.fromJSON(transaction)),
+          total: response.length,
+          page: 1,
+          page_size: response.length,
+          total_pages: 1
+        };
+      }
+
+      throw new Error('Unexpected response format');
     } catch (error) {
       console.error('Error fetching transactions:', error);
       throw error;

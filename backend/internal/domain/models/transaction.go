@@ -65,19 +65,48 @@ type TransferResponse struct {
 
 // TransactionFilter is the filter model for querying transactions
 type TransactionFilter struct {
-	Search    string `form:"search"`
-	Category  string `form:"category"`
-	Type      string `form:"type"`
-	AccountID uint   `form:"account_id"`
-	StartDate string `form:"start_date"`
-	EndDate   string `form:"end_date"`
+	Search    string  `form:"search"`
+	Category  string  `form:"category"`
+	Type      string  `form:"type"`
+	AccountID uint    `form:"account_id"`
+	StartDate string  `form:"start_date"`
+	EndDate   string  `form:"end_date"`
 	MinAmount float64 `form:"min_amount"`
 	MaxAmount float64 `form:"max_amount"`
-	Tags      string `form:"tags"`
-	Page      int    `form:"page"`
-	PageSize  int    `form:"page_size"`
-	SortBy    string `form:"sort_by"`
-	SortOrder string `form:"sort_order"`
+	Tags      string  `form:"tags"`
+	Page      int     `form:"page"`
+	PageSize  int     `form:"page_size"`
+	SortBy    string  `form:"sort_by"`
+	SortOrder string  `form:"sort_order"`
+}
+
+// TransactionFilterRequest represents advanced filter parameters with pagination
+type TransactionFilterRequest struct {
+	PaginationRequest
+
+	// Date filters
+	StartDate *time.Time `form:"start_date" time_format:"2006-01-02"`
+	EndDate   *time.Time `form:"end_date" time_format:"2006-01-02"`
+
+	// Amount filters
+	MinAmount *float64 `form:"min_amount" binding:"omitempty,min=0"`
+	MaxAmount *float64 `form:"max_amount" binding:"omitempty,min=0"`
+
+	// Category filters (support multiple categories)
+	Categories []string `form:"categories"`
+	Category   string   `form:"category"` // Single category for backward compatibility
+
+	// Type filter
+	Type string `form:"type" binding:"omitempty,oneof=income expense transfer"`
+
+	// Account filter
+	AccountID *uint `form:"account_id"`
+
+	// Search query
+	Search string `form:"search"`
+
+	// Tags filter
+	Tags []string `form:"tags"`
 }
 
 // PaginatedTransactionResponse is the paginated response for transactions
