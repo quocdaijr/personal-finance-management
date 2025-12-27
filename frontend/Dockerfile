@@ -6,7 +6,7 @@
 # =============================================================================
 # Development stage - Optimized for hot reload and development workflow
 # =============================================================================
-FROM node:22-alpine AS development
+FROM node:24-alpine AS development
 
 # Install system dependencies and security tools
 RUN apk add --no-cache \
@@ -56,7 +56,7 @@ CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "3000"]
 # =============================================================================
 # Build stage - Optimized for production asset compilation
 # =============================================================================
-FROM node:22-alpine AS build
+FROM node:24-alpine AS build
 
 # Install build dependencies including native compilation tools
 RUN apk add --no-cache \
