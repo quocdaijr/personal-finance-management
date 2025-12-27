@@ -1,3 +1,6 @@
+#Vibe Coding
+---
+
 # Personal Finance Management System
 
 A comprehensive, production-ready personal finance management application built with modern web technologies. This system provides complete financial tracking, budgeting, and analytics capabilities with enterprise-grade security and performance.
