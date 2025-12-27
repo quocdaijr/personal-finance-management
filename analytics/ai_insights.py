@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Any, Optional, Tuple
 import pandas as pd
 import numpy as np
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 from database import load_data_to_dataframe
 
@@ -34,7 +35,7 @@ class AIInsights:
         """
         start_date = datetime.now() - timedelta(days=days)
 
-        query = f"""
+        query = text("""
         SELECT
             id,
             amount,
@@ -43,12 +44,15 @@ class AIInsights:
             date,
             description
         FROM transactions
-        WHERE user_id = {user_id}
-            AND date >= '{start_date.isoformat()}'
+        WHERE user_id = :user_id
+            AND date >= :start_date
         ORDER BY date DESC
-        """
+        """)
 
-        df = load_data_to_dataframe(query)
+        df = load_data_to_dataframe(query, params={
+            'user_id': user_id,
+            'start_date': start_date.isoformat()
+        })
 
         if df.empty or len(df) < 10:
             return {
@@ -135,19 +139,22 @@ class AIInsights:
         # Get 6 months of historical data
         start_date = datetime.now() - timedelta(days=180)
 
-        query = f"""
+        query = text("""
         SELECT
             amount,
             category,
             type,
             date
         FROM transactions
-        WHERE user_id = {user_id}
-            AND date >= '{start_date.isoformat()}'
+        WHERE user_id = :user_id
+            AND date >= :start_date
             AND type = 'expense'
-        """
+        """)
 
-        df = load_data_to_dataframe(query)
+        df = load_data_to_dataframe(query, params={
+            'user_id': user_id,
+            'start_date': start_date.isoformat()
+        })
 
         if df.empty:
             return {
@@ -159,12 +166,12 @@ class AIInsights:
         df['date'] = pd.to_datetime(df['date'], format='mixed', errors='coerce')
 
         # Get existing budgets
-        budgets_query = f"""
+        budgets_query = text("""
         SELECT category, amount
         FROM budgets
-        WHERE user_id = {user_id}
-        """
-        budgets_df = load_data_to_dataframe(budgets_query)
+        WHERE user_id = :user_id
+        """)
+        budgets_df = load_data_to_dataframe(budgets_query, params={'user_id': user_id})
 
         existing_budgets = set(budgets_df['category'].tolist()) if not budgets_df.empty else set()
 
@@ -231,7 +238,7 @@ class AIInsights:
         # Get 90 days of data
         start_date = datetime.now() - timedelta(days=90)
 
-        query = f"""
+        query = text("""
         SELECT
             amount,
             category,
@@ -239,11 +246,14 @@ class AIInsights:
             date,
             description
         FROM transactions
-        WHERE user_id = {user_id}
-            AND date >= '{start_date.isoformat()}'
-        """
+        WHERE user_id = :user_id
+            AND date >= :start_date
+        """)
 
-        df = load_data_to_dataframe(query)
+        df = load_data_to_dataframe(query, params={
+            'user_id': user_id,
+            'start_date': start_date.isoformat()
+        })
 
         if df.empty:
             return {
@@ -351,18 +361,22 @@ class AIInsights:
         # Get historical data
         start_date = datetime.now() - timedelta(days=180)
 
-        query = f"""
+        query = text("""
         SELECT
             amount,
             date
         FROM transactions
-        WHERE user_id = {user_id}
-            AND category = '{category}'
+        WHERE user_id = :user_id
+            AND category = :category
             AND type = 'expense'
-            AND date >= '{start_date.isoformat()}'
-        """
+            AND date >= :start_date
+        """)
 
-        df = load_data_to_dataframe(query)
+        df = load_data_to_dataframe(query, params={
+            'user_id': user_id,
+            'category': category,
+            'start_date': start_date.isoformat()
+        })
 
         if df.empty or len(df) < 5:
             return {

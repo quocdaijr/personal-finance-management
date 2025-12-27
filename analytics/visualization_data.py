@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Any, Optional
 import pandas as pd
 import numpy as np
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 from database import load_data_to_dataframe
 
@@ -32,18 +33,21 @@ class VisualizationData:
         """
         start_date = datetime.now() - timedelta(days=months * 30)
 
-        query = f"""
+        query = text("""
         SELECT
             amount,
             date,
             type
         FROM transactions
-        WHERE user_id = {user_id}
-            AND date >= '{start_date.isoformat()}'
+        WHERE user_id = :user_id
+            AND date >= :start_date
             AND type = 'expense'
-        """
+        """)
 
-        df = load_data_to_dataframe(query)
+        df = load_data_to_dataframe(query, params={
+            'user_id': user_id,
+            'start_date': start_date.isoformat()
+        })
 
         if df.empty:
             return {
@@ -166,28 +170,32 @@ class VisualizationData:
             end_date = datetime.now()
 
         # Get starting balance
-        balance_query = f"""
+        balance_query = text("""
         SELECT COALESCE(SUM(balance), 0) as starting_balance
         FROM accounts
-        WHERE user_id = {user_id}
-        """
-        balance_df = load_data_to_dataframe(balance_query)
+        WHERE user_id = :user_id
+        """)
+        balance_df = load_data_to_dataframe(balance_query, params={'user_id': user_id})
         starting_balance = float(balance_df['starting_balance'].iloc[0]) if not balance_df.empty else 0
 
         # Get transactions
-        query = f"""
+        query = text("""
         SELECT
             amount,
             type,
             category,
             date
         FROM transactions
-        WHERE user_id = {user_id}
-            AND date >= '{start_date.isoformat()}'
-            AND date <= '{end_date.isoformat()}'
-        """
+        WHERE user_id = :user_id
+            AND date >= :start_date
+            AND date <= :end_date
+        """)
 
-        df = load_data_to_dataframe(query)
+        df = load_data_to_dataframe(query, params={
+            'user_id': user_id,
+            'start_date': start_date.isoformat(),
+            'end_date': end_date.isoformat()
+        })
 
         waterfall_items = [
             {
@@ -260,19 +268,23 @@ class VisualizationData:
         if not end_date:
             end_date = datetime.now()
 
-        query = f"""
+        query = text("""
         SELECT
             amount,
             type,
             category,
             account_id
         FROM transactions
-        WHERE user_id = {user_id}
-            AND date >= '{start_date.isoformat()}'
-            AND date <= '{end_date.isoformat()}'
-        """
+        WHERE user_id = :user_id
+            AND date >= :start_date
+            AND date <= :end_date
+        """)
 
-        df = load_data_to_dataframe(query)
+        df = load_data_to_dataframe(query, params={
+            'user_id': user_id,
+            'start_date': start_date.isoformat(),
+            'end_date': end_date.isoformat()
+        })
 
         if df.empty:
             return {
@@ -330,18 +342,22 @@ class VisualizationData:
         end_date: datetime
     ) -> Dict[str, Any]:
         """Get financial data for a period"""
-        query = f"""
+        query = text("""
         SELECT
             amount,
             type,
             category
         FROM transactions
-        WHERE user_id = {user_id}
-            AND date >= '{start_date.isoformat()}'
-            AND date <= '{end_date.isoformat()}'
-        """
+        WHERE user_id = :user_id
+            AND date >= :start_date
+            AND date <= :end_date
+        """)
 
-        df = load_data_to_dataframe(query)
+        df = load_data_to_dataframe(query, params={
+            'user_id': user_id,
+            'start_date': start_date.isoformat(),
+            'end_date': end_date.isoformat()
+        })
 
         if df.empty:
             return {

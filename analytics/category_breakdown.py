@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Any, Optional
 import pandas as pd
 import numpy as np
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 from database import load_data_to_dataframe
 
@@ -39,7 +40,7 @@ class CategoryBreakdown:
         if not end_date:
             end_date = datetime.now()
 
-        query = f"""
+        query = text("""
         SELECT
             amount,
             category,
@@ -47,13 +48,18 @@ class CategoryBreakdown:
             date,
             description
         FROM transactions
-        WHERE user_id = {user_id}
-            AND type = '{transaction_type}'
-            AND date >= '{start_date.isoformat()}'
-            AND date <= '{end_date.isoformat()}'
-        """
+        WHERE user_id = :user_id
+            AND type = :transaction_type
+            AND date >= :start_date
+            AND date <= :end_date
+        """)
 
-        df = load_data_to_dataframe(query)
+        df = load_data_to_dataframe(query, params={
+            'user_id': user_id,
+            'transaction_type': transaction_type,
+            'start_date': start_date.isoformat(),
+            'end_date': end_date.isoformat()
+        })
 
         if df.empty:
             return {
@@ -125,19 +131,23 @@ class CategoryBreakdown:
         """
         start_date = datetime.now() - timedelta(days=months * 30)
 
-        query = f"""
+        query = text("""
         SELECT
             amount,
             date,
             description
         FROM transactions
-        WHERE user_id = {user_id}
-            AND category = '{category}'
-            AND date >= '{start_date.isoformat()}'
+        WHERE user_id = :user_id
+            AND category = :category
+            AND date >= :start_date
         ORDER BY date
-        """
+        """)
 
-        df = load_data_to_dataframe(query)
+        df = load_data_to_dataframe(query, params={
+            'user_id': user_id,
+            'category': category,
+            'start_date': start_date.isoformat()
+        })
 
         if df.empty:
             return {
@@ -225,21 +235,30 @@ class CategoryBreakdown:
         if not end_date:
             end_date = datetime.now()
 
-        categories_str = "','".join(categories)
+        # Build parameterized query with IN clause
+        placeholders = ','.join([f':cat{i}' for i in range(len(categories))])
+        params = {
+            'user_id': user_id,
+            'start_date': start_date.isoformat(),
+            'end_date': end_date.isoformat()
+        }
+        # Add each category as a separate parameter
+        for i, cat in enumerate(categories):
+            params[f'cat{i}'] = cat
 
-        query = f"""
+        query = text(f"""
         SELECT
             amount,
             category,
             date
         FROM transactions
-        WHERE user_id = {user_id}
-            AND category IN ('{categories_str}')
-            AND date >= '{start_date.isoformat()}'
-            AND date <= '{end_date.isoformat()}'
-        """
+        WHERE user_id = :user_id
+            AND category IN ({placeholders})
+            AND date >= :start_date
+            AND date <= :end_date
+        """)
 
-        df = load_data_to_dataframe(query)
+        df = load_data_to_dataframe(query, params=params)
 
         if df.empty:
             return {
@@ -294,19 +313,24 @@ class CategoryBreakdown:
         if not end_date:
             end_date = datetime.now()
 
-        query = f"""
+        query = text("""
         SELECT
             amount,
             description,
             date
         FROM transactions
-        WHERE user_id = {user_id}
-            AND category = '{parent_category}'
-            AND date >= '{start_date.isoformat()}'
-            AND date <= '{end_date.isoformat()}'
-        """
+        WHERE user_id = :user_id
+            AND category = :parent_category
+            AND date >= :start_date
+            AND date <= :end_date
+        """)
 
-        df = load_data_to_dataframe(query)
+        df = load_data_to_dataframe(query, params={
+            'user_id': user_id,
+            'parent_category': parent_category,
+            'start_date': start_date.isoformat(),
+            'end_date': end_date.isoformat()
+        })
 
         if df.empty:
             return {

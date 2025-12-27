@@ -275,14 +275,19 @@ func (s *HouseholdService) convertMembersToResponse(members []models.HouseholdMe
 			ID:                 member.ID,
 			HouseholdID:        member.HouseholdID,
 			UserID:             member.UserID,
-			Username:           member.User.Username,
-			Email:              member.User.Email,
 			Relationship:       member.Relationship,
 			IsDependent:        member.IsDependent,
 			AllowanceAmount:    member.AllowanceAmount,
 			AllowanceFrequency: member.AllowanceFrequency,
 			CreatedAt:          member.CreatedAt,
 		}
+
+		// Safely access User relationship if it was preloaded
+		if member.User != nil {
+			response.Username = member.User.Username
+			response.Email = member.User.Email
+		}
+
 		responses = append(responses, response)
 	}
 	return responses

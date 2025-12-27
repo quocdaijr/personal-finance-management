@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Any, Optional
 import pandas as pd
 import numpy as np
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 from database import load_data_to_dataframe
 
@@ -40,7 +41,7 @@ class AdvancedAnalytics:
             end_date = datetime.now()
 
         # Load transactions
-        query = f"""
+        query = text("""
         SELECT
             amount,
             category,
@@ -48,12 +49,16 @@ class AdvancedAnalytics:
             date,
             description
         FROM transactions
-        WHERE user_id = {user_id}
-            AND date >= '{start_date.isoformat()}'
-            AND date <= '{end_date.isoformat()}'
+        WHERE user_id = :user_id
+            AND date >= :start_date
+            AND date <= :end_date
         ORDER BY date
-        """
-        df = load_data_to_dataframe(query)
+        """)
+        df = load_data_to_dataframe(query, params={
+            'user_id': user_id,
+            'start_date': start_date.isoformat(),
+            'end_date': end_date.isoformat()
+        })
 
         if df.empty:
             return {
@@ -172,18 +177,21 @@ class AdvancedAnalytics:
         """
         start_date = datetime.now() - timedelta(days=months * 30)
 
-        query = f"""
+        query = text("""
         SELECT
             amount,
             type,
             date,
             category
         FROM transactions
-        WHERE user_id = {user_id}
-            AND date >= '{start_date.isoformat()}'
+        WHERE user_id = :user_id
+            AND date >= :start_date
         ORDER BY date
-        """
-        df = load_data_to_dataframe(query)
+        """)
+        df = load_data_to_dataframe(query, params={
+            'user_id': user_id,
+            'start_date': start_date.isoformat()
+        })
 
         if df.empty:
             return {
@@ -256,21 +264,37 @@ class AdvancedAnalytics:
         last_year_end = datetime(current_year - 1, 12, 31, 23, 59, 59)
 
         # Query for both years
-        query = f"""
-        SELECT
-            amount,
-            type,
-            date,
-            category
-        FROM transactions
-        WHERE user_id = {user_id}
-            AND date >= '{last_year_start.isoformat()}'
-        """
+        params = {
+            'user_id': user_id,
+            'last_year_start': last_year_start.isoformat()
+        }
 
         if category:
-            query += f" AND category = '{category}'"
+            query = text("""
+            SELECT
+                amount,
+                type,
+                date,
+                category
+            FROM transactions
+            WHERE user_id = :user_id
+                AND date >= :last_year_start
+                AND category = :category
+            """)
+            params['category'] = category
+        else:
+            query = text("""
+            SELECT
+                amount,
+                type,
+                date,
+                category
+            FROM transactions
+            WHERE user_id = :user_id
+                AND date >= :last_year_start
+            """)
 
-        df = load_data_to_dataframe(query)
+        df = load_data_to_dataframe(query, params=params)
 
         if df.empty:
             return {

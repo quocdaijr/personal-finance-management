@@ -38,12 +38,16 @@ def get_db():
         db.close()
 
 # Function to load data into pandas DataFrame
-def load_data_to_dataframe(query):
+def load_data_to_dataframe(query, params=None):
     """
     Execute SQL query and return results as pandas DataFrame
+
+    Args:
+        query: SQL query string or SQLAlchemy text() object
+        params: Optional dictionary of parameters for parameterized queries
     """
     try:
-        return pd.read_sql(query, engine)
+        return pd.read_sql(query, engine, params=params)
     except Exception as e:
         print(f"Error loading data: {e}")
         return pd.DataFrame()

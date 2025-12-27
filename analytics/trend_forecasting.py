@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Any, Optional
 import pandas as pd
 import numpy as np
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 from database import load_data_to_dataframe
 
@@ -35,22 +36,39 @@ class TrendForecasting:
         # Get historical data (12 months)
         start_date = datetime.now() - timedelta(days=365)
 
-        query = f"""
-        SELECT
-            amount,
-            type,
-            date,
-            category
-        FROM transactions
-        WHERE user_id = {user_id}
-            AND date >= '{start_date.isoformat()}'
-            AND type = 'expense'
-        """
+        params = {
+            'user_id': user_id,
+            'start_date': start_date.isoformat()
+        }
 
         if category:
-            query += f" AND category = '{category}'"
+            query = text("""
+            SELECT
+                amount,
+                type,
+                date,
+                category
+            FROM transactions
+            WHERE user_id = :user_id
+                AND date >= :start_date
+                AND type = 'expense'
+                AND category = :category
+            """)
+            params['category'] = category
+        else:
+            query = text("""
+            SELECT
+                amount,
+                type,
+                date,
+                category
+            FROM transactions
+            WHERE user_id = :user_id
+                AND date >= :start_date
+                AND type = 'expense'
+            """)
 
-        df = load_data_to_dataframe(query)
+        df = load_data_to_dataframe(query, params=params)
 
         if df.empty or len(df) < 3:
             return {
@@ -141,18 +159,21 @@ class TrendForecasting:
         """
         start_date = datetime.now() - timedelta(days=months * 30)
 
-        query = f"""
+        query = text("""
         SELECT
             amount,
             type,
             date
         FROM transactions
-        WHERE user_id = {user_id}
-            AND date >= '{start_date.isoformat()}'
+        WHERE user_id = :user_id
+            AND date >= :start_date
         ORDER BY date
-        """
+        """)
 
-        df = load_data_to_dataframe(query)
+        df = load_data_to_dataframe(query, params={
+            'user_id': user_id,
+            'start_date': start_date.isoformat()
+        })
 
         if df.empty:
             return {
@@ -249,22 +270,39 @@ class TrendForecasting:
         # Get 2 years of data for seasonality detection
         start_date = datetime.now() - timedelta(days=730)
 
-        query = f"""
-        SELECT
-            amount,
-            type,
-            date,
-            category
-        FROM transactions
-        WHERE user_id = {user_id}
-            AND date >= '{start_date.isoformat()}'
-            AND type = 'expense'
-        """
+        params = {
+            'user_id': user_id,
+            'start_date': start_date.isoformat()
+        }
 
         if category:
-            query += f" AND category = '{category}'"
+            query = text("""
+            SELECT
+                amount,
+                type,
+                date,
+                category
+            FROM transactions
+            WHERE user_id = :user_id
+                AND date >= :start_date
+                AND type = 'expense'
+                AND category = :category
+            """)
+            params['category'] = category
+        else:
+            query = text("""
+            SELECT
+                amount,
+                type,
+                date,
+                category
+            FROM transactions
+            WHERE user_id = :user_id
+                AND date >= :start_date
+                AND type = 'expense'
+            """)
 
-        df = load_data_to_dataframe(query)
+        df = load_data_to_dataframe(query, params=params)
 
         if df.empty:
             return {

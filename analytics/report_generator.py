@@ -28,6 +28,7 @@ try:
 except ImportError:
     OPENPYXL_AVAILABLE = False
 
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 from database import load_data_to_dataframe
 
@@ -231,7 +232,7 @@ class ReportGenerator:
         end_date: datetime
     ) -> Dict[str, Any]:
         """Get financial data for report"""
-        query = f"""
+        query = text("""
         SELECT
             amount,
             category,
@@ -239,12 +240,16 @@ class ReportGenerator:
             date,
             description
         FROM transactions
-        WHERE user_id = {user_id}
-            AND date >= '{start_date.isoformat()}'
-            AND date <= '{end_date.isoformat()}'
-        """
+        WHERE user_id = :user_id
+            AND date >= :start_date
+            AND date <= :end_date
+        """)
 
-        df = load_data_to_dataframe(query)
+        df = load_data_to_dataframe(query, params={
+            'user_id': user_id,
+            'start_date': start_date.isoformat(),
+            'end_date': end_date.isoformat()
+        })
 
         if df.empty:
             return {
@@ -332,7 +337,7 @@ class ReportGenerator:
     def _create_transactions_sheet(self, ws, user_id, start_date, end_date):
         """Create transactions sheet in Excel"""
         # Get transactions
-        query = f"""
+        query = text("""
         SELECT
             date,
             description,
@@ -340,13 +345,17 @@ class ReportGenerator:
             type,
             amount
         FROM transactions
-        WHERE user_id = {user_id}
-            AND date >= '{start_date.isoformat()}'
-            AND date <= '{end_date.isoformat()}'
+        WHERE user_id = :user_id
+            AND date >= :start_date
+            AND date <= :end_date
         ORDER BY date DESC
-        """
+        """)
 
-        df = load_data_to_dataframe(query)
+        df = load_data_to_dataframe(query, params={
+            'user_id': user_id,
+            'start_date': start_date.isoformat(),
+            'end_date': end_date.isoformat()
+        })
 
         # Headers
         headers = ['Date', 'Description', 'Category', 'Type', 'Amount']

@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/csv"
 	"net/http"
 	"strconv"
 
@@ -171,7 +172,11 @@ func (h *TaxHandler) GetTaxReport(c *gin.Context) {
 		return
 	}
 
-	userID, _ := c.Get("user_id")
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
 
 	report, err := h.taxService.GetTaxReport(userID.(uint), year)
 	if err != nil {
@@ -202,7 +207,11 @@ func (h *TaxHandler) ExportTaxData(c *gin.Context) {
 		return
 	}
 
-	userID, _ := c.Get("user_id")
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
 
 	report, err := h.taxService.GetTaxReport(userID.(uint), year)
 	if err != nil {
@@ -210,20 +219,34 @@ func (h *TaxHandler) ExportTaxData(c *gin.Context) {
 		return
 	}
 
-	// Generate CSV
+	// Generate CSV with proper escaping to prevent CSV injection
 	c.Header("Content-Type", "text/csv")
 	c.Header("Content-Disposition", "attachment; filename=tax_report_"+yearStr+".csv")
 
-	// Write CSV header
-	c.Writer.Write([]byte("Date,Description,Category,Tax Category,Tax Type,Amount\n"))
+	// Create CSV writer which properly escapes special characters
+	writer := csv.NewWriter(c.Writer)
+	defer writer.Flush()
 
-	// Write transactions
+	// Write CSV header
+	header := []string{"Date", "Description", "Category", "Tax Category", "Tax Type", "Amount"}
+	if err := writer.Write(header); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to write CSV header"})
+		return
+	}
+
+	// Write transactions with proper CSV escaping
 	for _, txn := range report.Transactions {
-		c.Writer.Write([]byte(txn.Date + "," +
-			txn.Description + "," +
-			txn.Category + "," +
-			txn.TaxCategoryName + "," +
-			txn.TaxType + "," +
-			strconv.FormatFloat(txn.Amount, 'f', 2, 64) + "\n"))
+		record := []string{
+			txn.Date,
+			txn.Description,
+			txn.Category,
+			txn.TaxCategoryName,
+			txn.TaxType,
+			strconv.FormatFloat(txn.Amount, 'f', 2, 64),
+		}
+		if err := writer.Write(record); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to write CSV record"})
+			return
+		}
 	}
 }
