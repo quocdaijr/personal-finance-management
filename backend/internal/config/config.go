@@ -20,6 +20,9 @@ type Config struct {
 	JWTRefreshSecret string
 	JWTExpiryHours   int
 	AppName          string
+	RedisAddr        string
+	RedisPassword    string
+	RedisDB          int
 }
 
 func LoadConfig() *Config {
@@ -30,6 +33,7 @@ func LoadConfig() *Config {
 	}
 
 	jwtExpiryHours, _ := strconv.Atoi(getEnv("JWT_EXPIRY_HOURS", "24"))
+	redisDB, _ := strconv.Atoi(getEnv("REDIS_DB", "0"))
 
 	useSQLite := getEnv("USE_SQLITE", "false") == "true"
 
@@ -45,6 +49,9 @@ func LoadConfig() *Config {
 		JWTRefreshSecret: getEnv("JWT_REFRESH_SECRET", "your-refresh-secret-change-in-production"),
 		JWTExpiryHours:   jwtExpiryHours,
 		AppName:          getEnv("APP_NAME", "Finance Management"),
+		RedisAddr:        getEnv("REDIS_ADDR", "localhost:6379"),
+		RedisPassword:    getEnv("REDIS_PASSWORD", ""),
+		RedisDB:          redisDB,
 	}
 }
 

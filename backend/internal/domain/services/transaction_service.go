@@ -128,6 +128,35 @@ func (s *TransactionService) GetFiltered(userID uint, filter *models.Transaction
 	}, nil
 }
 
+// GetPaginated gets paginated transactions with advanced filters
+func (s *TransactionService) GetPaginated(userID uint, filter *models.TransactionFilterRequest) (*models.PaginatedTransactionResponse, error) {
+	// Apply default pagination values
+	filter.ApplyDefaults()
+
+	// Get paginated transactions
+	transactions, total, err := s.transactionRepo.GetPaginated(userID, filter)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert to response format
+	var data []*models.TransactionResponse
+	for _, t := range transactions {
+		data = append(data, t.ToResponse())
+	}
+
+	// Calculate total pages
+	totalPages := filter.CalculateTotalPages(total)
+
+	return &models.PaginatedTransactionResponse{
+		Data:       data,
+		Total:      total,
+		Page:       filter.Page,
+		PageSize:   filter.PageSize,
+		TotalPages: totalPages,
+	}, nil
+}
+
 // Update updates a transaction atomically
 func (s *TransactionService) Update(id uint, userID uint, req *models.TransactionRequest) (*models.Transaction, error) {
 	var updatedTransaction *models.Transaction

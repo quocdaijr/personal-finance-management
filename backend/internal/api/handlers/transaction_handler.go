@@ -88,7 +88,7 @@ func (h *TransactionHandler) GetByID(c *gin.Context) {
 	c.JSON(http.StatusOK, transaction.ToResponse())
 }
 
-// GetAll handles getting all transactions for a user
+// GetAll handles getting all transactions for a user with pagination and filtering
 func (h *TransactionHandler) GetAll(c *gin.Context) {
 	// Get user ID from context
 	userID, err := utils.GetUserIDFromContext(c)
@@ -97,20 +97,20 @@ func (h *TransactionHandler) GetAll(c *gin.Context) {
 		return
 	}
 
-	// Get transactions
-	transactions, err := h.transactionService.GetAll(userID)
+	// Bind query parameters to filter
+	var filter models.TransactionFilterRequest
+	if err := c.ShouldBindQuery(&filter); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Get paginated transactions
+	response, err := h.transactionService.GetPaginated(userID, &filter)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	// Convert to response models
-	var response []*models.TransactionResponse
-	for _, t := range transactions {
-		response = append(response, t.ToResponse())
-	}
-
-	// Return response
 	c.JSON(http.StatusOK, response)
 }
 
