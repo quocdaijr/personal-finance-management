@@ -1,4 +1,4 @@
-#Vibe Coding
+# Vibe Coding
 ---
 
 # Personal Finance Management System
