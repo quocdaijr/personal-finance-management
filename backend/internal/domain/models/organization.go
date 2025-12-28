@@ -8,7 +8,7 @@ import (
 type Organization struct {
 	ID        uint      `gorm:"primaryKey" json:"id"`
 	Name      string    `gorm:"not null" json:"name"`
-	OwnerID   uint      `gorm:"not null" json:"owner_id"`
+	OwnerID   uint      `gorm:"not null;index:idx_organizations_owner_id" json:"owner_id"`
 	Settings  string    `gorm:"type:text" json:"settings"` // JSON: {approval_threshold: 1000, expense_policies: {...}}
 	CreatedAt time.Time `gorm:"autoCreateTime" json:"created_at"`
 	UpdatedAt time.Time `gorm:"autoUpdateTime" json:"updated_at"`
@@ -24,7 +24,7 @@ type Department struct {
 	OrganizationID uint      `gorm:"not null;index:idx_departments_organization_id" json:"organization_id"`
 	Name           string    `gorm:"not null" json:"name"`
 	BudgetAmount   float64   `json:"budget_amount"`
-	ManagerID      *uint     `json:"manager_id"`
+	ManagerID      *uint     `gorm:"index:idx_departments_manager_id" json:"manager_id"`
 	CreatedAt      time.Time `gorm:"autoCreateTime" json:"created_at"`
 	UpdatedAt      time.Time `gorm:"autoUpdateTime" json:"updated_at"`
 
@@ -43,7 +43,7 @@ type Reimbursement struct {
 	Status         string     `gorm:"not null;default:'pending';check:status IN ('pending','approved','rejected','paid')" json:"status"` // pending, approved, rejected, paid
 	ReceiptURL     string     `json:"receipt_url"`
 	Description    string     `json:"description"`
-	ApprovedBy     *uint      `json:"approved_by"`
+	ApprovedBy     *uint      `gorm:"index:idx_reimbursements_approved_by" json:"approved_by"`
 	ApprovedAt     *time.Time `json:"approved_at"`
 	PaidAt         *time.Time `json:"paid_at"`
 	CreatedAt      time.Time  `gorm:"autoCreateTime" json:"created_at"`

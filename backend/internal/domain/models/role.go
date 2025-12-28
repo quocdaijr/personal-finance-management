@@ -10,7 +10,7 @@ type Role struct {
 	AccountID    *uint     `gorm:"index:idx_roles_account_id" json:"account_id"` // NULL for system roles
 	Name         string    `gorm:"not null" json:"name"`
 	Description  string    `json:"description"`
-	Permissions  string    `gorm:"type:jsonb;not null" json:"permissions"` // JSON: {transactions: {read: true, write: true, delete: false}}
+	Permissions  string    `gorm:"type:text;not null" json:"permissions"` // JSON: {transactions: {read: true, write: true, delete: false}}
 	IsSystemRole bool      `gorm:"default:false" json:"is_system_role"` // owner, admin, editor, viewer
 	CreatedAt    time.Time `gorm:"autoCreateTime" json:"created_at"`
 	UpdatedAt    time.Time `gorm:"autoUpdateTime" json:"updated_at"`

@@ -151,7 +151,7 @@ func (s *HouseholdService) AddMember(householdID, adderID uint, req *models.Hous
 	if household.CreatedBy != adderID {
 		// Check if adder is a parent member
 		adderMember, err := s.getHouseholdMemberByUser(householdID, adderID)
-		if err != nil || adderMember.Relationship != "parent" {
+		if err != nil || adderMember == nil || adderMember.Relationship != "parent" {
 			return nil, errors.New("only household creator or parents can add members")
 		}
 	}
@@ -214,7 +214,7 @@ func (s *HouseholdService) UpdateAllowance(householdID, memberID, updaterID uint
 
 	if household.CreatedBy != updaterID {
 		updaterMember, err := s.getHouseholdMemberByUser(householdID, updaterID)
-		if err != nil || updaterMember.Relationship != "parent" {
+		if err != nil || updaterMember == nil || updaterMember.Relationship != "parent" {
 			return errors.New("only household creator or parents can update allowances")
 		}
 	}
@@ -246,7 +246,7 @@ func (s *HouseholdService) RemoveMember(householdID, memberID, removerID uint) e
 
 	if household.CreatedBy != removerID {
 		removerMember, err := s.getHouseholdMemberByUser(householdID, removerID)
-		if err != nil || removerMember.Relationship != "parent" {
+		if err != nil || removerMember == nil || removerMember.Relationship != "parent" {
 			return errors.New("only household creator or parents can remove members")
 		}
 	}

@@ -39,12 +39,18 @@ func main() {
 		&models.BalanceHistory{},
 		// Sprint 4/5: Multi-user collaboration models
 		&models.Organization{},
+		&models.Department{},
+		&models.Reimbursement{},
+		&models.Household{},
+		&models.HouseholdMember{},
 		&models.AccountMember{},
+		&models.Role{},
+		&models.UserRole{},
 		&models.ActivityLog{},
 		&models.ApprovalWorkflow{},
 		&models.Comment{},
 		&models.Invitation{},
-		&models.Role{},
+		&models.PermissionAuditLog{},
 		// Sprint 4/5: Tax and reporting models
 		&models.TaxCategory{},
 		&models.Report{},
@@ -72,6 +78,17 @@ func main() {
 	balanceHistoryRepo := repository.NewBalanceHistoryRepository(db)
 	taxRepo := repository.NewTaxRepository(db)
 	reportRepo := repository.NewReportRepository(db)
+	// Sprint 5: Collaboration repositories
+	householdRepo := repository.NewHouseholdRepository(db)
+	householdMemberRepo := repository.NewHouseholdMemberRepository(db)
+	commentRepo := repository.NewCommentRepository(db)
+	approvalRepo := repository.NewApprovalWorkflowRepository(db)
+	accountMemberRepo := repository.NewAccountMemberRepository(db)
+	invitationRepo := repository.NewInvitationRepository(db)
+	roleRepo := repository.NewRoleRepository(db)
+	userRoleRepo := repository.NewUserRoleRepository(db)
+	auditRepo := repository.NewPermissionAuditLogRepository(db)
+	activityLogRepo := repository.NewActivityLogRepository(db)
 
 	// Initialize email service
 	environment := os.Getenv("ENVIRONMENT")
@@ -105,6 +122,11 @@ func main() {
 	searchService := services.NewSearchService(transactionRepo, accountRepo, budgetRepo, goalRepo)
 	taxService := services.NewTaxService(taxRepo)
 	reportService := services.NewReportService(reportRepo)
+	// Sprint 5: Collaboration services
+	permissionService := services.NewPermissionService(accountMemberRepo, roleRepo, userRoleRepo, auditRepo)
+	householdService := services.NewHouseholdService(householdRepo, householdMemberRepo, budgetRepo, goalRepo, userRepo, activityLogRepo)
+	collaborationService := services.NewCollaborationService(commentRepo, activityLogRepo, approvalRepo, transactionRepo, accountMemberRepo, notificationRepo, permissionService)
+	sharingService := services.NewSharingService(accountMemberRepo, invitationRepo, accountRepo, userRepo, permissionService, activityLogRepo)
 
 	// Initialize handlers
 	userHandler := handlers.NewUserHandler(userService)
