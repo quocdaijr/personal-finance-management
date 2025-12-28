@@ -90,6 +90,13 @@ func (s *TaxService) UpdateCategory(id, userID uint, req *models.UpdateTaxCatego
 
 // DeleteCategory deletes a tax category
 func (s *TaxService) DeleteCategory(id, userID uint) error {
+	// Check if category exists first
+	_, err := s.taxRepo.GetCategoryByID(id, userID)
+	if err != nil {
+		return errors.New("tax category not found")
+	}
+
+	// Delete the category
 	return s.taxRepo.DeleteCategory(id, userID)
 }
 

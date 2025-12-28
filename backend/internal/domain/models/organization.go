@@ -40,7 +40,7 @@ type Reimbursement struct {
 	EmployeeID     uint       `gorm:"not null;index:idx_reimbursements_employee_id" json:"employee_id"`
 	TransactionID  *uint      `json:"transaction_id"`
 	Amount         float64    `gorm:"not null" json:"amount"`
-	Status         string     `gorm:"not null;default:'pending'" json:"status"` // pending, approved, rejected, paid
+	Status         string     `gorm:"not null;default:'pending';check:status IN ('pending','approved','rejected','paid')" json:"status"` // pending, approved, rejected, paid
 	ReceiptURL     string     `json:"receipt_url"`
 	Description    string     `json:"description"`
 	ApprovedBy     *uint      `json:"approved_by"`
@@ -134,4 +134,15 @@ func (Department) TableName() string {
 // TableName overrides the table name
 func (Reimbursement) TableName() string {
 	return "reimbursements"
+}
+
+// ValidateReimbursementStatus validates if a status is a valid reimbursement status
+func ValidateReimbursementStatus(status string) bool {
+	validStatuses := map[string]bool{
+		"pending":  true,
+		"approved": true,
+		"rejected": true,
+		"paid":     true,
+	}
+	return validStatuses[status]
 }

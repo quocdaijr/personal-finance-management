@@ -128,6 +128,11 @@ func (r *TaxRepository) GetTaxReport(userID uint, year int) (*models.TaxReportRe
 		return byCategory[i].CategoryName < byCategory[j].CategoryName
 	})
 
+	// Sort transactions by date for deterministic output
+	sort.Slice(taxTransactions, func(i, j int) bool {
+		return taxTransactions[i].Date < taxTransactions[j].Date
+	})
+
 	return &models.TaxReportResponse{
 		Year:            year,
 		TotalIncome:     totalIncome,

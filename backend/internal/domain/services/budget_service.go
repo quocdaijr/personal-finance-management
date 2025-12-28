@@ -20,15 +20,28 @@ func NewBudgetService(budgetRepo *repository.BudgetRepository) *BudgetService {
 	}
 }
 
+// validateBudgetRequest validates budget request for mutual exclusivity and calculates end date
+func validateBudgetRequest(req *models.BudgetRequest) (time.Time, error) {
+	// Validate mutual exclusivity: budget must belong to either a user, household, or department
+	if req.HouseholdID != nil && req.DepartmentID != nil {
+		return time.Time{}, errors.New("budget cannot belong to both household and department")
+	}
+
+	// Calculate end date based on period
+	return calculateEndDate(req.StartDate, req.Period), nil
+}
+
 // calculateEndDate calculates the end date based on period and start date
+// Note: This uses rolling periods from the start date, not calendar-aligned boundaries
+// For example, a monthly budget starting on Jan 15 will end on Feb 14, not Jan 31
 func calculateEndDate(startDate time.Time, period string) time.Time {
 	switch period {
 	case "monthly":
-		return startDate.AddDate(0, 1, 0).Add(-time.Second) // End of month
+		return startDate.AddDate(0, 1, 0).Add(-time.Second) // Start date + 1 month - 1 second
 	case "quarterly":
-		return startDate.AddDate(0, 3, 0).Add(-time.Second) // End of quarter
+		return startDate.AddDate(0, 3, 0).Add(-time.Second) // Start date + 3 months - 1 second
 	case "yearly":
-		return startDate.AddDate(1, 0, 0).Add(-time.Second) // End of year
+		return startDate.AddDate(1, 0, 0).Add(-time.Second) // Start date + 1 year - 1 second
 	default:
 		return startDate.AddDate(0, 1, 0).Add(-time.Second) // Default to monthly
 	}
@@ -36,13 +49,17 @@ func calculateEndDate(startDate time.Time, period string) time.Time {
 
 // Create creates a new budget
 func (s *BudgetService) Create(userID uint, req *models.BudgetRequest) (*models.Budget, error) {
-	// Validate mutual exclusivity: budget must belong to either a user, household, or department
-	if req.HouseholdID != nil && req.DepartmentID != nil {
-		return nil, errors.New("budget cannot belong to both household and department")
+	// Validate request and calculate end date
+	endDate, err := validateBudgetRequest(req)
+	if err != nil {
+		return nil, err
 	}
 
-	// Calculate end date based on period
-	endDate := calculateEndDate(req.StartDate, req.Period)
+	// TODO: Add authorization check for household/department budget assignment
+	// Before assigning HouseholdID or DepartmentID, verify user has permission:
+	// - For HouseholdID: Check if user is a household member
+	// - For DepartmentID: Check if user has department budget creation permission
+	// Example: permissionService.CheckPermission(userID, householdID, "budget", "create")
 
 	// Create budget
 	budget := &models.Budget{
@@ -84,13 +101,14 @@ func (s *BudgetService) Update(id uint, userID uint, req *models.BudgetRequest) 
 		return nil, err
 	}
 
-	// Validate mutual exclusivity: budget must belong to either a user, household, or department
-	if req.HouseholdID != nil && req.DepartmentID != nil {
-		return nil, errors.New("budget cannot belong to both household and department")
+	// Validate request and calculate end date
+	endDate, err := validateBudgetRequest(req)
+	if err != nil {
+		return nil, err
 	}
 
-	// Calculate end date based on period
-	endDate := calculateEndDate(req.StartDate, req.Period)
+	// TODO: Add authorization check for household/department budget assignment
+	// Same as Create: verify user has permission before changing HouseholdID or DepartmentID
 
 	// Update budget
 	budget.Name = req.Name
