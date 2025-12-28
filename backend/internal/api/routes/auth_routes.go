@@ -16,6 +16,8 @@ func SetupAuthRoutes(api *gin.RouterGroup, rc *RouterConfig) {
 		auth.POST("/verify-2fa", rc.AuthHandler.VerifyTwoFactor)
 		auth.POST("/forgot-password", rc.AuthHandler.ForgotPassword)
 		auth.POST("/reset-password", rc.AuthHandler.ResetPassword)
+		// Support both GET (email links) and POST (API calls) for email verification
+		auth.GET("/verify-email", rc.AuthHandler.VerifyEmail)
 		auth.POST("/verify-email", rc.AuthHandler.VerifyEmail)
 		auth.POST("/resend-verification", rc.AuthHandler.ResendVerification)
 	}

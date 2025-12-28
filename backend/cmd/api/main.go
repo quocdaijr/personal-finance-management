@@ -12,7 +12,6 @@ import (
 	"github.com/quocdaijr/finance-management-backend/internal/infrastructure/database"
 	"github.com/quocdaijr/finance-management-backend/internal/repository"
 	infraServices "github.com/quocdaijr/finance-management-backend/internal/services"
-	"gorm.io/gorm"
 )
 
 func main() {

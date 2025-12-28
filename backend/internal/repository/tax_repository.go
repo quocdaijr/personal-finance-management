@@ -72,13 +72,12 @@ func (r *TaxRepository) GetTaxReport(userID uint, year int) (*models.TaxReportRe
 	var taxTransactions []models.TaxTransactionSummary
 
 	for _, txn := range transactions {
-		if txn.TaxCategoryID == nil {
+		if txn.TaxCategoryID == nil || txn.TaxCategory == nil {
 			continue
 		}
 
-		// Get tax category info
-		var taxCategory models.TaxCategory
-		r.db.First(&taxCategory, *txn.TaxCategoryID)
+		// Use the already preloaded TaxCategory to avoid N+1 query
+		taxCategory := txn.TaxCategory
 
 		// Aggregate by category
 		if _, exists := categoryMap[*txn.TaxCategoryID]; !exists {

@@ -1,6 +1,8 @@
 package routes
 
 import (
+	"os"
+
 	"github.com/gin-gonic/gin"
 	"github.com/quocdaijr/finance-management-backend/internal/api/middleware"
 )
@@ -10,11 +12,16 @@ func SetupAdminRoutes(api *gin.RouterGroup, rc *RouterConfig) {
 	protected := api.Group("")
 	protected.Use(middleware.AuthMiddleware(rc.Config))
 
-	// User management (admin/debug)
-	users := protected.Group("/users")
-	{
-		users.GET("", rc.UserHandler.GetUsers)
-		users.GET("/:id", rc.UserHandler.GetUser)
+	// User management (debug endpoints - development only)
+	// TODO: These endpoints expose all users without authorization checks
+	// They should be removed or restricted to admin users only in production
+	environment := os.Getenv("ENVIRONMENT")
+	if environment == "" || environment == "development" {
+		users := protected.Group("/users")
+		{
+			users.GET("", rc.UserHandler.GetUsers)
+			users.GET("/:id", rc.UserHandler.GetUser)
+		}
 	}
 
 	// Category management
