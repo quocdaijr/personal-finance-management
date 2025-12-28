@@ -55,7 +55,7 @@ class VisualizationData:
                 "max_value": 0
             }
 
-        df['date'] = pd.to_datetime(df['date'], format='mixed', errors='coerce')
+        df['date'] = pd.to_datetime(df['date'], errors='coerce')
         df['amount'] = df['amount'].abs()
 
         # Extract day of week and hour

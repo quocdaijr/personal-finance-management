@@ -20,6 +20,26 @@ func (r *HouseholdRepository) Create(household *models.Household) error {
 	return r.db.Create(household).Error
 }
 
+// CreateWithMember creates a household and adds the creator as a member in a transaction
+func (r *HouseholdRepository) CreateWithMember(household *models.Household, member *models.HouseholdMember) error {
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		// Create household
+		if err := tx.Create(household).Error; err != nil {
+			return err
+		}
+
+		// Set household ID for member
+		member.HouseholdID = household.ID
+
+		// Create member
+		if err := tx.Create(member).Error; err != nil {
+			return err
+		}
+
+		return nil
+	})
+}
+
 // GetByID gets a household by ID
 func (r *HouseholdRepository) GetByID(id uint) (*models.Household, error) {
 	var household models.Household

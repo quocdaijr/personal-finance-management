@@ -1,7 +1,6 @@
 package services
 
 import (
-	"encoding/json"
 	"errors"
 
 	"github.com/quocdaijr/finance-management-backend/internal/domain/models"
@@ -45,19 +44,15 @@ func (s *HouseholdService) CreateHousehold(userID uint, req *models.HouseholdReq
 		CreatedBy: userID,
 	}
 
-	if err := s.householdRepo.Create(household); err != nil {
-		return nil, err
-	}
-
 	// Add creator as parent member
 	member := &models.HouseholdMember{
-		HouseholdID:  household.ID,
 		UserID:       userID,
 		Relationship: "parent",
 		IsDependent:  false,
 	}
 
-	if err := s.householdMemberRepo.Create(member); err != nil {
+	// Create both household and member in a transaction
+	if err := s.householdRepo.CreateWithMember(household, member); err != nil {
 		return nil, err
 	}
 
@@ -118,6 +113,24 @@ func (s *HouseholdService) GetHousehold(householdID, userID uint) (*models.House
 
 // AddMember adds a member to a household
 func (s *HouseholdService) AddMember(householdID, adderID uint, req *models.HouseholdMemberRequest) (*models.HouseholdMember, error) {
+	// Validate allowance amount (must be non-negative)
+	if req.AllowanceAmount != nil && *req.AllowanceAmount < 0 {
+		return nil, errors.New("allowance amount must be non-negative")
+	}
+
+	// Validate frequency
+	if req.AllowanceFrequency != "" {
+		validFrequencies := map[string]bool{
+			"daily":   true,
+			"weekly":  true,
+			"monthly": true,
+			"yearly":  true,
+		}
+		if !validFrequencies[req.AllowanceFrequency] {
+			return nil, errors.New("invalid allowance frequency: must be one of 'daily', 'weekly', 'monthly', or 'yearly'")
+		}
+	}
+
 	// Check if adder is creator or parent
 	household, err := s.householdRepo.GetByID(householdID)
 	if err != nil {
@@ -139,7 +152,10 @@ func (s *HouseholdService) AddMember(householdID, adderID uint, req *models.Hous
 	}
 
 	// Check if already a member
-	isMember, _ := s.householdRepo.IsMember(householdID, req.UserID)
+	isMember, err := s.householdRepo.IsMember(householdID, req.UserID)
+	if err != nil {
+		return nil, err
+	}
 	if isMember {
 		return nil, errors.New("user is already a member of this household")
 	}
@@ -163,6 +179,22 @@ func (s *HouseholdService) AddMember(householdID, adderID uint, req *models.Hous
 
 // UpdateAllowance updates a member's allowance
 func (s *HouseholdService) UpdateAllowance(householdID, memberID, updaterID uint, amount float64, frequency string) error {
+	// Validate amount (must be non-negative)
+	if amount < 0 {
+		return errors.New("allowance amount must be non-negative")
+	}
+
+	// Validate frequency
+	validFrequencies := map[string]bool{
+		"daily":   true,
+		"weekly":  true,
+		"monthly": true,
+		"yearly":  true,
+	}
+	if frequency != "" && !validFrequencies[frequency] {
+		return errors.New("invalid allowance frequency: must be one of 'daily', 'weekly', 'monthly', or 'yearly'")
+	}
+
 	// Check if updater is creator or parent
 	household, err := s.householdRepo.GetByID(householdID)
 	if err != nil {
@@ -291,18 +323,4 @@ func (s *HouseholdService) convertMembersToResponse(members []models.HouseholdMe
 		responses = append(responses, response)
 	}
 	return responses
-}
-
-// logActivity logs an activity
-func (s *HouseholdService) logActivity(accountID, userID uint, action, entityType string, entityID uint, details map[string]interface{}) {
-	detailsJSON, _ := json.Marshal(details)
-	log := &models.ActivityLog{
-		AccountID:  accountID,
-		UserID:     userID,
-		Action:     action,
-		EntityType: entityType,
-		EntityID:   entityID,
-		Details:    string(detailsJSON),
-	}
-	_ = s.activityLogRepo.Create(log)
 }

@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Any, Optional
 import pandas as pd
 import numpy as np
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 from database import load_data_to_dataframe
 
@@ -31,7 +32,7 @@ class GoalAnalytics:
             Dict containing probability analysis
         """
         # Get goal details
-        goal_query = f"""
+        goal_query = text("""
         SELECT
             id,
             name,
@@ -40,10 +41,13 @@ class GoalAnalytics:
             target_date,
             created_at
         FROM goals
-        WHERE id = {goal_id} AND user_id = {user_id}
-        """
+        WHERE id = :goal_id AND user_id = :user_id
+        """)
 
-        goal_df = load_data_to_dataframe(goal_query)
+        goal_df = load_data_to_dataframe(goal_query, params={
+            'goal_id': goal_id,
+            'user_id': user_id
+        })
 
         if goal_df.empty:
             return {
@@ -127,7 +131,7 @@ class GoalAnalytics:
             Dict containing timeline projections
         """
         # Get goal details
-        goal_query = f"""
+        goal_query = text("""
         SELECT
             id,
             name,
@@ -136,10 +140,13 @@ class GoalAnalytics:
             target_date,
             created_at
         FROM goals
-        WHERE id = {goal_id} AND user_id = {user_id}
-        """
+        WHERE id = :goal_id AND user_id = :user_id
+        """)
 
-        goal_df = load_data_to_dataframe(goal_query)
+        goal_df = load_data_to_dataframe(goal_query, params={
+            'goal_id': goal_id,
+            'user_id': user_id
+        })
 
         if goal_df.empty:
             return {
@@ -231,7 +238,7 @@ class GoalAnalytics:
             Dict containing contribution recommendations
         """
         # Get goal details
-        goal_query = f"""
+        goal_query = text("""
         SELECT
             id,
             name,
@@ -239,10 +246,13 @@ class GoalAnalytics:
             current_amount,
             target_date
         FROM goals
-        WHERE id = {goal_id} AND user_id = {user_id}
-        """
+        WHERE id = :goal_id AND user_id = :user_id
+        """)
 
-        goal_df = load_data_to_dataframe(goal_query)
+        goal_df = load_data_to_dataframe(goal_query, params={
+            'goal_id': goal_id,
+            'user_id': user_id
+        })
 
         if goal_df.empty:
             return {
@@ -297,19 +307,23 @@ class GoalAnalytics:
         })
 
         # Get user's average monthly income for affordability check
-        income_query = f"""
+        # Using DATE_TRUNC for PostgreSQL compatibility (also works in modern SQLite)
+        income_query = text("""
         SELECT AVG(monthly_income) as avg_income
         FROM (
             SELECT SUM(amount) as monthly_income
             FROM transactions
-            WHERE user_id = {user_id}
+            WHERE user_id = :user_id
                 AND type = 'income'
-                AND date >= '{(datetime.now() - timedelta(days=90)).isoformat()}'
-            GROUP BY strftime('%Y-%m', date)
-        )
-        """
+                AND date >= :start_date
+            GROUP BY DATE_TRUNC('month', date)
+        ) AS monthly_totals
+        """)
 
-        income_df = load_data_to_dataframe(income_query)
+        income_df = load_data_to_dataframe(income_query, params={
+            'user_id': user_id,
+            'start_date': (datetime.now() - timedelta(days=90)).isoformat()
+        })
         avg_monthly_income = float(income_df['avg_income'].iloc[0]) if not income_df.empty and pd.notna(income_df['avg_income'].iloc[0]) else 0
 
         # Assess affordability

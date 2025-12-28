@@ -66,7 +66,11 @@ func (h *TaxHandler) GetCategory(c *gin.Context) {
 		return
 	}
 
-	userID, _ := c.Get("user_id")
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
 
 	category, err := h.taxService.GetCategory(uint(id), userID.(uint))
 	if err != nil {
@@ -84,7 +88,11 @@ func (h *TaxHandler) GetCategory(c *gin.Context) {
 // @Success 200 {array} models.TaxCategory
 // @Router /api/tax/categories [get]
 func (h *TaxHandler) ListCategories(c *gin.Context) {
-	userID, _ := c.Get("user_id")
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
 
 	categories, err := h.taxService.ListCategories(userID.(uint))
 	if err != nil {
@@ -117,7 +125,11 @@ func (h *TaxHandler) UpdateCategory(c *gin.Context) {
 		return
 	}
 
-	userID, _ := c.Get("user_id")
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
 
 	category, err := h.taxService.UpdateCategory(uint(id), userID.(uint), &req)
 	if err != nil {
@@ -141,7 +153,11 @@ func (h *TaxHandler) DeleteCategory(c *gin.Context) {
 		return
 	}
 
-	userID, _ := c.Get("user_id")
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
 
 	err = h.taxService.DeleteCategory(uint(id), userID.(uint))
 	if err != nil {

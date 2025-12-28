@@ -66,100 +66,93 @@ class ReportGenerator:
                 "error": "ReportLab not installed. Install with: pip install reportlab"
             }
 
-        try:
-            # Create PDF document
-            doc = SimpleDocTemplate(output_path, pagesize=letter)
-            story = []
-            styles = getSampleStyleSheet()
+        # Create PDF document
+        doc = SimpleDocTemplate(output_path, pagesize=letter)
+        story = []
+        styles = getSampleStyleSheet()
 
-            # Title
-            title_style = ParagraphStyle(
-                'CustomTitle',
-                parent=styles['Heading1'],
-                fontSize=24,
-                textColor=colors.HexColor('#1976d2'),
-                spaceAfter=30,
-                alignment=TA_CENTER
-            )
+        # Title
+        title_style = ParagraphStyle(
+            'CustomTitle',
+            parent=styles['Heading1'],
+            fontSize=24,
+            textColor=colors.HexColor('#1976d2'),
+            spaceAfter=30,
+            alignment=TA_CENTER
+        )
 
-            title = Paragraph(f"Financial Report - {report_type.replace('_', ' ').title()}", title_style)
-            story.append(title)
+        title = Paragraph(f"Financial Report - {report_type.replace('_', ' ').title()}", title_style)
+        story.append(title)
 
-            # Report period
-            period_text = f"Period: {start_date.strftime('%Y-%m-%d')} to {end_date.strftime('%Y-%m-%d')}"
-            story.append(Paragraph(period_text, styles['Normal']))
-            story.append(Spacer(1, 0.3 * inch))
+        # Report period
+        period_text = f"Period: {start_date.strftime('%Y-%m-%d')} to {end_date.strftime('%Y-%m-%d')}"
+        story.append(Paragraph(period_text, styles['Normal']))
+        story.append(Spacer(1, 0.3 * inch))
 
-            # Get financial data
-            data = self._get_report_data(user_id, start_date, end_date)
+        # Get financial data
+        data = self._get_report_data(user_id, start_date, end_date)
 
-            # Summary section
-            story.append(Paragraph("Financial Summary", styles['Heading2']))
-            summary_data = [
-                ['Metric', 'Amount'],
-                ['Total Income', f"${data['total_income']:,.2f}"],
-                ['Total Expenses', f"${data['total_expenses']:,.2f}"],
-                ['Net Income', f"${data['net_income']:,.2f}"],
-                ['Savings Rate', f"{data['savings_rate']:.1f}%"]
-            ]
+        # Summary section
+        story.append(Paragraph("Financial Summary", styles['Heading2']))
+        summary_data = [
+            ['Metric', 'Amount'],
+            ['Total Income', f"${data['total_income']:,.2f}"],
+            ['Total Expenses', f"${data['total_expenses']:,.2f}"],
+            ['Net Income', f"${data['net_income']:,.2f}"],
+            ['Savings Rate', f"{data['savings_rate']:.1f}%"]
+        ]
 
-            summary_table = Table(summary_data, colWidths=[3*inch, 2*inch])
-            summary_table.setStyle(TableStyle([
+        summary_table = Table(summary_data, colWidths=[3*inch, 2*inch])
+        summary_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1976d2')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('ALIGN', (1, 0), (1, -1), 'RIGHT'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 12),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+            ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black)
+        ]))
+
+        story.append(summary_table)
+        story.append(Spacer(1, 0.5 * inch))
+
+        # Spending by category
+        if data['spending_by_category']:
+            story.append(Paragraph("Spending by Category", styles['Heading2']))
+
+            category_data = [['Category', 'Amount', 'Percentage']]
+            for item in data['spending_by_category'][:10]:  # Top 10
+                category_data.append([
+                    item['category'],
+                    f"${item['amount']:,.2f}",
+                    f"{item['percentage']:.1f}%"
+                ])
+
+            category_table = Table(category_data, colWidths=[2.5*inch, 1.5*inch, 1.5*inch])
+            category_table.setStyle(TableStyle([
                 ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1976d2')),
                 ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
                 ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-                ('ALIGN', (1, 0), (1, -1), 'RIGHT'),
+                ('ALIGN', (1, 0), (-1, -1), 'RIGHT'),
                 ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-                ('FONTSIZE', (0, 0), (-1, 0), 12),
+                ('FONTSIZE', (0, 0), (-1, 0), 10),
                 ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
                 ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
                 ('GRID', (0, 0), (-1, -1), 1, colors.black)
             ]))
 
-            story.append(summary_table)
-            story.append(Spacer(1, 0.5 * inch))
+            story.append(category_table)
 
-            # Spending by category
-            if data['spending_by_category']:
-                story.append(Paragraph("Spending by Category", styles['Heading2']))
+        # Build PDF
+        doc.build(story)
 
-                category_data = [['Category', 'Amount', 'Percentage']]
-                for item in data['spending_by_category'][:10]:  # Top 10
-                    category_data.append([
-                        item['category'],
-                        f"${item['amount']:,.2f}",
-                        f"{item['percentage']:.1f}%"
-                    ])
-
-                category_table = Table(category_data, colWidths=[2.5*inch, 1.5*inch, 1.5*inch])
-                category_table.setStyle(TableStyle([
-                    ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1976d2')),
-                    ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-                    ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-                    ('ALIGN', (1, 0), (-1, -1), 'RIGHT'),
-                    ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-                    ('FONTSIZE', (0, 0), (-1, 0), 10),
-                    ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-                    ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
-                    ('GRID', (0, 0), (-1, -1), 1, colors.black)
-                ]))
-
-                story.append(category_table)
-
-            # Build PDF
-            doc.build(story)
-
-            return {
-                "success": True,
-                "file_path": output_path,
-                "message": "PDF report generated successfully"
-            }
-
-        except Exception as e:
-            return {
-                "success": False,
-                "error": str(e)
-            }
+        return {
+            "success": True,
+            "file_path": output_path,
+            "message": "PDF report generated successfully"
+        }
 
     def generate_excel_report(
         self,
@@ -188,42 +181,35 @@ class ReportGenerator:
                 "error": "openpyxl not installed. Install with: pip install openpyxl"
             }
 
-        try:
-            # Create workbook
-            wb = Workbook()
+        # Create workbook
+        wb = Workbook()
 
-            # Remove default sheet
-            wb.remove(wb.active)
+        # Remove default sheet
+        wb.remove(wb.active)
 
-            # Get data
-            data = self._get_report_data(user_id, start_date, end_date)
+        # Get data
+        data = self._get_report_data(user_id, start_date, end_date)
 
-            # Summary sheet
-            ws_summary = wb.create_sheet("Summary")
-            self._create_summary_sheet(ws_summary, data, start_date, end_date)
+        # Summary sheet
+        ws_summary = wb.create_sheet("Summary")
+        self._create_summary_sheet(ws_summary, data, start_date, end_date)
 
-            # Transactions sheet
-            ws_transactions = wb.create_sheet("Transactions")
-            self._create_transactions_sheet(ws_transactions, user_id, start_date, end_date)
+        # Transactions sheet
+        ws_transactions = wb.create_sheet("Transactions")
+        self._create_transactions_sheet(ws_transactions, user_id, start_date, end_date)
 
-            # Category breakdown sheet
-            ws_categories = wb.create_sheet("Categories")
-            self._create_categories_sheet(ws_categories, data)
+        # Category breakdown sheet
+        ws_categories = wb.create_sheet("Categories")
+        self._create_categories_sheet(ws_categories, data)
 
-            # Save workbook
-            wb.save(output_path)
+        # Save workbook
+        wb.save(output_path)
 
-            return {
-                "success": True,
-                "file_path": output_path,
-                "message": "Excel report generated successfully"
-            }
-
-        except Exception as e:
-            return {
-                "success": False,
-                "error": str(e)
-            }
+        return {
+            "success": True,
+            "file_path": output_path,
+            "message": "Excel report generated successfully"
+        }
 
     def _get_report_data(
         self,
