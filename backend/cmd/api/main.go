@@ -37,6 +37,17 @@ func main() {
 		&models.Notification{},
 		&models.Category{},
 		&models.BalanceHistory{},
+		// Sprint 4/5: Multi-user collaboration models
+		&models.Organization{},
+		&models.AccountMember{},
+		&models.ActivityLog{},
+		&models.ApprovalWorkflow{},
+		&models.Comment{},
+		&models.Invitation{},
+		&models.Role{},
+		// Sprint 4/5: Tax and reporting models
+		&models.TaxCategory{},
+		&models.Report{},
 	)
 	if err != nil {
 		log.Fatal("Failed to migrate database:", err)
