@@ -1,7 +1,7 @@
 package repository
 
 import (
-	"github.com/yourusername/finance-management/internal/domain/models"
+	"github.com/quocdaijr/finance-management-backend/internal/domain/models"
 	"gorm.io/gorm"
 	"time"
 )

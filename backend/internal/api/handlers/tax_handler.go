@@ -8,8 +8,8 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/yourusername/finance-management/internal/domain/models"
-	"github.com/yourusername/finance-management/internal/domain/services"
+	"github.com/quocdaijr/finance-management-backend/internal/domain/models"
+	"github.com/quocdaijr/finance-management-backend/internal/domain/services"
 )
 
 // TaxHandler handles tax-related HTTP requests
