@@ -38,6 +38,11 @@ type RouterConfig struct {
 	CategoryHandler       *handlers.CategoryHandler
 	BalanceHistoryHandler *handlers.BalanceHistoryHandler
 	CurrencyHandler       *handlers.CurrencyHandler
+
+	// Sprint 5: Collaboration handlers
+	HouseholdHandler      *handlers.HouseholdHandler
+	CollaborationHandler  *handlers.CollaborationHandler
+	SharingHandler        *handlers.SharingHandler
 }
 
 // SetupRouter configures the main router with all routes
@@ -68,10 +73,11 @@ func SetupRouter(rc *RouterConfig) *gin.Engine {
 	SetupAuthRoutes(api, rc)         // Authentication & profiles
 	SetupFinancialRoutes(api, rc)    // Accounts, transactions, budgets
 	SetupGoalRoutes(api, rc)         // Goals & recurring transactions
-	SetupReportingRoutes(api, rc)    // Tax & custom reports
-	SetupDataRoutes(api, rc)         // Import, export, search
-	SetupNotificationRoutes(api, rc) // Notifications & alerts
-	SetupAdminRoutes(api, rc)        // Categories, user management
+	SetupReportingRoutes(api, rc)       // Tax & custom reports
+	SetupDataRoutes(api, rc)            // Import, export, search
+	SetupNotificationRoutes(api, rc)    // Notifications & alerts
+	SetupAdminRoutes(api, rc)           // Categories, user management
+	SetupCollaborationRoutes(api, rc)   // Sprint 5: Households, sharing, collaboration
 
 	return router
 }

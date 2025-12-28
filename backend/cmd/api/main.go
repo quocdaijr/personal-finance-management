@@ -145,6 +145,10 @@ func main() {
 	searchHandler := handlers.NewSearchHandler(searchService)
 	taxHandler := handlers.NewTaxHandler(taxService)
 	reportHandler := handlers.NewReportHandler(reportService)
+	// Sprint 5: Collaboration handlers
+	householdHandler := handlers.NewHouseholdHandler(householdService)
+	collaborationHandler := handlers.NewCollaborationHandler(collaborationService)
+	sharingHandler := handlers.NewSharingHandler(sharingService)
 
 	// Setup router with all routes
 	router := routes.SetupRouter(&routes.RouterConfig{
@@ -165,6 +169,10 @@ func main() {
 		SearchHandler:         searchHandler,
 		TaxHandler:            taxHandler,
 		ReportHandler:         reportHandler,
+		// Sprint 5: Collaboration handlers
+		HouseholdHandler:      householdHandler,
+		CollaborationHandler:  collaborationHandler,
+		SharingHandler:        sharingHandler,
 	})
 
 	// Start server
