@@ -233,11 +233,24 @@ func (h *AuthHandler) ResetPassword(c *gin.Context) {
 }
 
 // VerifyEmail handles email verification
+// Supports both GET (email links with ?token=xxx) and POST (JSON body)
 func (h *AuthHandler) VerifyEmail(c *gin.Context) {
 	var req models.VerifyEmailRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
+
+	// Check if it's a GET request with query parameter (email link)
+	if c.Request.Method == "GET" {
+		token := c.Query("token")
+		if token == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "token is required"})
+			return
+		}
+		req.Token = token
+	} else {
+		// POST request with JSON body
+		if err := c.ShouldBindJSON(&req); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
 	}
 
 	response, err := h.authService.VerifyEmail(&req)

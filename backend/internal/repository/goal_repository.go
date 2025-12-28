@@ -76,6 +76,13 @@ func (r *GoalRepository) Delete(id uint, userID uint) error {
 	return r.db.Where("id = ? AND user_id = ?", id, userID).Delete(&models.Goal{}).Error
 }
 
+// GetByHousehold gets all goals for a household
+func (r *GoalRepository) GetByHousehold(householdID uint, goals *[]models.Goal) error {
+	return r.db.Where("household_id = ?", householdID).
+		Order("is_completed ASC, priority DESC, target_date ASC").
+		Find(goals).Error
+}
+
 // GetSummary gets a summary of all goals for a user
 func (r *GoalRepository) GetSummary(userID uint) (*models.GoalSummary, error) {
 	goals, err := r.GetAll(userID)

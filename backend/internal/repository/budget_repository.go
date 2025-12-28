@@ -76,6 +76,11 @@ func (r *BudgetRepository) GetBudgetPeriods() []models.BudgetPeriod {
 	}
 }
 
+// GetByHousehold gets all budgets for a household
+func (r *BudgetRepository) GetByHousehold(householdID uint, budgets *[]models.Budget) error {
+	return r.db.Where("household_id = ?", householdID).Find(budgets).Error
+}
+
 // GetSummary gets a summary of budgets for a user
 func (r *BudgetRepository) GetSummary(userID uint) (*models.BudgetSummary, error) {
 	// Get all budgets for the user

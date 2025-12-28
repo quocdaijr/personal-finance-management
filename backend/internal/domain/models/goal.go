@@ -19,6 +19,7 @@ type Goal struct {
 	TargetDate    *time.Time `gorm:"index:idx_goals_target_date" json:"target_date"`
 	StartDate     time.Time  `gorm:"not null" json:"start_date"`
 	AccountID     *uint      `json:"account_id"` // Optional linked account
+	HouseholdID   *uint      `gorm:"index:idx_goals_household_id" json:"household_id"` // For shared household goals
 	IsCompleted   bool       `gorm:"default:false;index:idx_goals_is_completed" json:"is_completed"`
 	CompletedAt   *time.Time `json:"completed_at"`
 	Priority      int        `gorm:"default:0;index:idx_goals_priority" json:"priority"` // 0=low, 1=medium, 2=high
@@ -39,6 +40,7 @@ type GoalRequest struct {
 	TargetDate    *time.Time `json:"target_date"`
 	StartDate     *time.Time `json:"start_date"`
 	AccountID     *uint      `json:"account_id"`
+	HouseholdID   *uint      `json:"household_id,omitempty"` // For shared household goals
 	Priority      int        `json:"priority"`
 }
 
@@ -62,6 +64,7 @@ type GoalResponse struct {
 	TargetDate      *time.Time `json:"target_date"`
 	StartDate       time.Time  `json:"start_date"`
 	AccountID       *uint      `json:"account_id"`
+	HouseholdID     *uint      `json:"household_id,omitempty"` // For shared household goals
 	IsCompleted     bool       `json:"is_completed"`
 	CompletedAt     *time.Time `json:"completed_at"`
 	Priority        int        `json:"priority"`
@@ -122,6 +125,7 @@ func (g *Goal) ToResponse() *GoalResponse {
 		TargetDate:      g.TargetDate,
 		StartDate:       g.StartDate,
 		AccountID:       g.AccountID,
+		HouseholdID:     g.HouseholdID,
 		IsCompleted:     g.IsCompleted,
 		CompletedAt:     g.CompletedAt,
 		Priority:        g.Priority,

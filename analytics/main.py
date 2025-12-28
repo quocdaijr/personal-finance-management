@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Depends, HTTPException, Security
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
 import pandas as pd
@@ -53,22 +54,25 @@ def get_financial_overview(
             raise HTTPException(status_code=401, detail="Invalid token")
 
         # Get user's accounts
-        accounts_query = f"""
+        accounts_query = text("""
         SELECT id, name, type, balance, currency, is_default
         FROM accounts
-        WHERE user_id = {user_id}
-        """
-        accounts_df = load_data_to_dataframe(accounts_query)
+        WHERE user_id = :user_id
+        """)
+        accounts_df = load_data_to_dataframe(accounts_query, params={'user_id': user_id})
 
         # Get user's transactions for the last 30 days
         thirty_days_ago = datetime.now() - timedelta(days=30)
-        transactions_query = f"""
+        transactions_query = text("""
         SELECT amount, description, category, type, date, account_id
         FROM transactions
-        WHERE user_id = {user_id} AND date >= '{thirty_days_ago.isoformat()}'
+        WHERE user_id = :user_id AND date >= :thirty_days_ago
         ORDER BY date DESC
-        """
-        transactions_df = load_data_to_dataframe(transactions_query)
+        """)
+        transactions_df = load_data_to_dataframe(transactions_query, params={
+            'user_id': user_id,
+            'thirty_days_ago': thirty_days_ago.isoformat()
+        })
 
         # Calculate overview metrics
         total_assets = accounts_df[accounts_df['balance'] > 0]['balance'].sum() if not accounts_df.empty else 0
@@ -132,13 +136,16 @@ def get_transaction_trends(
             start_date = datetime.now() - timedelta(days=365)  # Default to year
 
         # Get transactions for the period
-        transactions_query = f"""
+        transactions_query = text("""
         SELECT amount, description, category, type, date
         FROM transactions
-        WHERE user_id = {user_id} AND date >= '{start_date.isoformat()}'
+        WHERE user_id = :user_id AND date >= :start_date
         ORDER BY date
-        """
-        transactions_df = load_data_to_dataframe(transactions_query)
+        """)
+        transactions_df = load_data_to_dataframe(transactions_query, params={
+            'user_id': user_id,
+            'start_date': start_date.isoformat()
+        })
 
         if transactions_df.empty:
             return {
@@ -206,12 +213,15 @@ def get_financial_insights(
 
         # Get recent transactions (last 30 days)
         thirty_days_ago = datetime.now() - timedelta(days=30)
-        transactions_query = f"""
+        transactions_query = text("""
         SELECT amount, category, type, date
         FROM transactions
-        WHERE user_id = {user_id} AND date >= '{thirty_days_ago.isoformat()}'
-        """
-        transactions_df = load_data_to_dataframe(transactions_query)
+        WHERE user_id = :user_id AND date >= :thirty_days_ago
+        """)
+        transactions_df = load_data_to_dataframe(transactions_query, params={
+            'user_id': user_id,
+            'thirty_days_ago': thirty_days_ago.isoformat()
+        })
 
         if not transactions_df.empty:
             # Analyze spending patterns
@@ -243,12 +253,12 @@ def get_financial_insights(
                     })
 
         # Get budget information
-        budgets_query = f"""
+        budgets_query = text("""
         SELECT name, amount, spent, category
         FROM budgets
-        WHERE user_id = {user_id}
-        """
-        budgets_df = load_data_to_dataframe(budgets_query)
+        WHERE user_id = :user_id
+        """)
+        budgets_df = load_data_to_dataframe(budgets_query, params={'user_id': user_id})
 
         if not budgets_df.empty:
             # Check budget utilization
@@ -279,6 +289,15 @@ def get_financial_insights(
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error generating insights: {str(e)}")
+
+# ============================================================================
+# SPRINT 4: Advanced Analytics & Reporting
+# ============================================================================
+
+# Note: Sprint 4 router (main_sprint4.py) has been removed as advanced analytics
+# are now integrated directly into the main analytics modules
+# (advanced_analytics.py, ai_insights.py, category_breakdown.py, trend_forecasting.py,
+# report_generator.py, visualization_data.py)
 
 if __name__ == '__main__':
     import uvicorn
