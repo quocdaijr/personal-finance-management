@@ -1,9 +1,11 @@
 package repository
 
 import (
+	"sort"
+	"time"
+
 	"github.com/quocdaijr/finance-management-backend/internal/domain/models"
 	"gorm.io/gorm"
-	"time"
 )
 
 // TaxRepository handles tax category data access
@@ -120,6 +122,11 @@ func (r *TaxRepository) GetTaxReport(userID uint, year int) (*models.TaxReportRe
 	for _, summary := range categoryMap {
 		byCategory = append(byCategory, *summary)
 	}
+
+	// Sort by category name for deterministic output
+	sort.Slice(byCategory, func(i, j int) bool {
+		return byCategory[i].CategoryName < byCategory[j].CategoryName
+	})
 
 	return &models.TaxReportResponse{
 		Year:            year,

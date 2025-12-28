@@ -9,7 +9,7 @@ type Organization struct {
 	ID        uint      `gorm:"primaryKey" json:"id"`
 	Name      string    `gorm:"not null" json:"name"`
 	OwnerID   uint      `gorm:"not null" json:"owner_id"`
-	Settings  string    `gorm:"type:jsonb" json:"settings"` // JSON: {approval_threshold: 1000, expense_policies: {...}}
+	Settings  string    `gorm:"type:text" json:"settings"` // JSON: {approval_threshold: 1000, expense_policies: {...}}
 	CreatedAt time.Time `gorm:"autoCreateTime" json:"created_at"`
 	UpdatedAt time.Time `gorm:"autoUpdateTime" json:"updated_at"`
 
