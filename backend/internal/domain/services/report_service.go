@@ -2,9 +2,10 @@ package services
 
 import (
 	"errors"
-	"github.com/yourusername/finance-management/internal/domain/models"
-	"github.com/yourusername/finance-management/internal/repository"
 	"time"
+
+	"github.com/quocdaijr/finance-management-backend/internal/domain/models"
+	"github.com/quocdaijr/finance-management-backend/internal/repository"
 )
 
 // ReportService handles report business logic

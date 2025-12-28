@@ -113,6 +113,17 @@ func (s *HouseholdService) GetHousehold(householdID, userID uint) (*models.House
 
 // AddMember adds a member to a household
 func (s *HouseholdService) AddMember(householdID, adderID uint, req *models.HouseholdMemberRequest) (*models.HouseholdMember, error) {
+	// Validate relationship
+	validRelationships := map[string]bool{
+		"parent": true,
+		"child":  true,
+		"spouse": true,
+		"other":  true,
+	}
+	if !validRelationships[req.Relationship] {
+		return nil, errors.New("invalid relationship: must be one of 'parent', 'child', 'spouse', or 'other'")
+	}
+
 	// Validate allowance amount (must be non-negative)
 	if req.AllowanceAmount != nil && *req.AllowanceAmount < 0 {
 		return nil, errors.New("allowance amount must be non-negative")
@@ -208,6 +219,15 @@ func (s *HouseholdService) UpdateAllowance(householdID, memberID, updaterID uint
 		}
 	}
 
+	// Verify member belongs to this household (prevent cross-household updates)
+	member, err := s.householdMemberRepo.GetByID(memberID)
+	if err != nil {
+		return err
+	}
+	if member.HouseholdID != householdID {
+		return errors.New("member does not belong to this household")
+	}
+
 	// Update allowance
 	if err := s.householdMemberRepo.UpdateAllowance(memberID, amount, frequency); err != nil {
 		return err
@@ -231,10 +251,15 @@ func (s *HouseholdService) RemoveMember(householdID, memberID, removerID uint) e
 		}
 	}
 
-	// Get member to check if they're the creator
+	// Get member to verify ownership and check if they're the creator
 	member, err := s.householdMemberRepo.GetByID(memberID)
 	if err != nil {
 		return err
+	}
+
+	// Verify member belongs to this household (prevent cross-household deletions)
+	if member.HouseholdID != householdID {
+		return errors.New("member does not belong to this household")
 	}
 
 	if member.UserID == household.CreatedBy {

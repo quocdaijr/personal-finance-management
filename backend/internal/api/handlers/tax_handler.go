@@ -1,7 +1,9 @@
 package handlers
 
 import (
+	"bytes"
 	"encoding/csv"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -22,6 +24,38 @@ func NewTaxHandler(taxService *services.TaxService) *TaxHandler {
 	}
 }
 
+// getUserID safely extracts user ID from context with type checking
+func getUserID(c *gin.Context) (uint, error) {
+	userIDRaw, exists := c.Get("user_id")
+	if !exists {
+		return 0, fmt.Errorf("user not authenticated")
+	}
+
+	// Handle common type conversions
+	switch v := userIDRaw.(type) {
+	case uint:
+		return v, nil
+	case int:
+		if v < 0 {
+			return 0, fmt.Errorf("invalid user ID: negative value")
+		}
+		return uint(v), nil
+	case float64:
+		if v < 0 {
+			return 0, fmt.Errorf("invalid user ID: negative value")
+		}
+		return uint(v), nil
+	case string:
+		parsed, err := strconv.ParseUint(v, 10, 32)
+		if err != nil {
+			return 0, fmt.Errorf("invalid user ID format")
+		}
+		return uint(parsed), nil
+	default:
+		return 0, fmt.Errorf("unexpected user ID type: %T", v)
+	}
+}
+
 // CreateCategory creates a new tax category
 // @Summary Create a tax category
 // @Tags Tax
@@ -37,13 +71,13 @@ func (h *TaxHandler) CreateCategory(c *gin.Context) {
 		return
 	}
 
-	userID, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+	userID, err := getUserID(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
 
-	category, err := h.taxService.CreateCategory(userID.(uint), &req)
+	category, err := h.taxService.CreateCategory(userID, &req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -66,13 +100,13 @@ func (h *TaxHandler) GetCategory(c *gin.Context) {
 		return
 	}
 
-	userID, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+	userID, err := getUserID(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
 
-	category, err := h.taxService.GetCategory(uint(id), userID.(uint))
+	category, err := h.taxService.GetCategory(uint(id), userID)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Tax category not found"})
 		return
@@ -88,13 +122,13 @@ func (h *TaxHandler) GetCategory(c *gin.Context) {
 // @Success 200 {array} models.TaxCategory
 // @Router /api/tax/categories [get]
 func (h *TaxHandler) ListCategories(c *gin.Context) {
-	userID, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+	userID, err := getUserID(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
 
-	categories, err := h.taxService.ListCategories(userID.(uint))
+	categories, err := h.taxService.ListCategories(userID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -125,13 +159,13 @@ func (h *TaxHandler) UpdateCategory(c *gin.Context) {
 		return
 	}
 
-	userID, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+	userID, err := getUserID(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
 
-	category, err := h.taxService.UpdateCategory(uint(id), userID.(uint), &req)
+	category, err := h.taxService.UpdateCategory(uint(id), userID, &req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -153,13 +187,13 @@ func (h *TaxHandler) DeleteCategory(c *gin.Context) {
 		return
 	}
 
-	userID, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+	userID, err := getUserID(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
 
-	err = h.taxService.DeleteCategory(uint(id), userID.(uint))
+	err = h.taxService.DeleteCategory(uint(id), userID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -188,13 +222,19 @@ func (h *TaxHandler) GetTaxReport(c *gin.Context) {
 		return
 	}
 
-	userID, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+	// Validate year bounds (reasonable range)
+	if year < 1900 || year > 2100 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Year must be between 1900 and 2100"})
 		return
 	}
 
-	report, err := h.taxService.GetTaxReport(userID.(uint), year)
+	userID, err := getUserID(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		return
+	}
+
+	report, err := h.taxService.GetTaxReport(userID, year)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -223,30 +263,32 @@ func (h *TaxHandler) ExportTaxData(c *gin.Context) {
 		return
 	}
 
-	userID, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+	// Validate year bounds (reasonable range)
+	if year < 1900 || year > 2100 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Year must be between 1900 and 2100"})
 		return
 	}
 
-	report, err := h.taxService.GetTaxReport(userID.(uint), year)
+	userID, err := getUserID(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		return
+	}
+
+	report, err := h.taxService.GetTaxReport(userID, year)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	// Generate CSV with proper escaping to prevent CSV injection
-	c.Header("Content-Type", "text/csv")
-	c.Header("Content-Disposition", "attachment; filename=tax_report_"+yearStr+".csv")
-
-	// Create CSV writer which properly escapes special characters
-	writer := csv.NewWriter(c.Writer)
-	defer writer.Flush()
+	// Buffer CSV to avoid response corruption on errors
+	var buffer bytes.Buffer
+	writer := csv.NewWriter(&buffer)
 
 	// Write CSV header
 	header := []string{"Date", "Description", "Category", "Tax Category", "Tax Type", "Amount"}
 	if err := writer.Write(header); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to write CSV header"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate CSV"})
 		return
 	}
 
@@ -261,8 +303,20 @@ func (h *TaxHandler) ExportTaxData(c *gin.Context) {
 			strconv.FormatFloat(txn.Amount, 'f', 2, 64),
 		}
 		if err := writer.Write(record); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to write CSV record"})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate CSV"})
 			return
 		}
 	}
+
+	// Flush the writer
+	writer.Flush()
+	if err := writer.Error(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate CSV"})
+		return
+	}
+
+	// Success - now write headers and data atomically
+	c.Header("Content-Type", "text/csv")
+	c.Header("Content-Disposition", "attachment; filename=tax_report_"+yearStr+".csv")
+	c.Data(http.StatusOK, "text/csv", buffer.Bytes())
 }
