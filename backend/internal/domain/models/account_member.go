@@ -10,7 +10,7 @@ type AccountMember struct {
 	AccountID   uint      `gorm:"not null;index:idx_account_members_account_id" json:"account_id"`
 	UserID      uint      `gorm:"not null;index:idx_account_members_user_id" json:"user_id"`
 	Role        string    `gorm:"not null" json:"role"` // owner, admin, editor, viewer
-	Permissions string    `gorm:"type:jsonb" json:"permissions"` // JSON: {can_edit: true, can_delete: false, can_invite: true}
+	Permissions string    `gorm:"type:text" json:"permissions"` // JSON: {can_edit: true, can_delete: false, can_invite: true}
 	InvitedBy   *uint     `json:"invited_by"`
 	InvitedAt   *time.Time `json:"invited_at"`
 	AcceptedAt  *time.Time `json:"accepted_at"`

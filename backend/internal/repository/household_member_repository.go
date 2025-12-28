@@ -46,3 +46,18 @@ func (r *HouseholdMemberRepository) Update(member *models.HouseholdMember) error
 func (r *HouseholdMemberRepository) Delete(id uint) error {
 	return r.db.Where("id = ?", id).Delete(&models.HouseholdMember{}).Error
 }
+
+// GetByHousehold is an alias for GetByHouseholdID for backward compatibility
+func (r *HouseholdMemberRepository) GetByHousehold(householdID uint) ([]models.HouseholdMember, error) {
+	return r.GetByHouseholdID(householdID)
+}
+
+// UpdateAllowance updates a household member's allowance amount and frequency
+func (r *HouseholdMemberRepository) UpdateAllowance(memberID uint, amount float64, frequency string) error {
+	return r.db.Model(&models.HouseholdMember{}).
+		Where("id = ?", memberID).
+		Updates(map[string]interface{}{
+			"allowance_amount":    amount,
+			"allowance_frequency": frequency,
+		}).Error
+}

@@ -17,6 +17,9 @@ func NewUserRoleRepository(db *gorm.DB) *UserRoleRepository {
 
 // Create creates a new user role assignment
 func (r *UserRoleRepository) Create(userRole *models.UserRole) error {
+	if userRole == nil {
+		return gorm.ErrInvalidData
+	}
 	return r.db.Create(userRole).Error
 }
 
@@ -48,6 +51,9 @@ func (r *UserRoleRepository) GetByAccountID(accountID uint) ([]models.UserRole, 
 
 // Update updates a user role assignment
 func (r *UserRoleRepository) Update(userRole *models.UserRole) error {
+	if userRole == nil {
+		return gorm.ErrInvalidData
+	}
 	return r.db.Save(userRole).Error
 }
 

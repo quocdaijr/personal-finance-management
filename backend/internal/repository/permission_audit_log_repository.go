@@ -17,6 +17,9 @@ func NewPermissionAuditLogRepository(db *gorm.DB) *PermissionAuditLogRepository 
 
 // Create creates a new permission audit log entry
 func (r *PermissionAuditLogRepository) Create(log *models.PermissionAuditLog) error {
+	if log == nil {
+		return gorm.ErrInvalidData
+	}
 	return r.db.Create(log).Error
 }
 
@@ -30,23 +33,33 @@ func (r *PermissionAuditLogRepository) GetByID(id uint) (*models.PermissionAudit
 	return &log, nil
 }
 
-// GetByUserID gets all permission audit logs for a user
-func (r *PermissionAuditLogRepository) GetByUserID(userID uint) ([]models.PermissionAuditLog, error) {
+// GetByUserID gets all permission audit logs for a user with optional limit
+func (r *PermissionAuditLogRepository) GetByUserID(userID uint, limit int) ([]models.PermissionAuditLog, error) {
 	var logs []models.PermissionAuditLog
-	err := r.db.Preload("User").
+	query := r.db.Preload("User").
 		Where("user_id = ?", userID).
-		Order("created_at DESC").
-		Find(&logs).Error
+		Order("created_at DESC")
+
+	if limit > 0 {
+		query = query.Limit(limit)
+	}
+
+	err := query.Find(&logs).Error
 	return logs, err
 }
 
-// GetByResourceID gets all permission audit logs for a resource
-func (r *PermissionAuditLogRepository) GetByResourceID(resourceType string, resourceID uint) ([]models.PermissionAuditLog, error) {
+// GetByResourceID gets all permission audit logs for a resource with optional limit
+func (r *PermissionAuditLogRepository) GetByResourceID(resourceType string, resourceID uint, limit int) ([]models.PermissionAuditLog, error) {
 	var logs []models.PermissionAuditLog
-	err := r.db.Preload("User").
+	query := r.db.Preload("User").
 		Where("resource_type = ? AND resource_id = ?", resourceType, resourceID).
-		Order("created_at DESC").
-		Find(&logs).Error
+		Order("created_at DESC")
+
+	if limit > 0 {
+		query = query.Limit(limit)
+	}
+
+	err := query.Find(&logs).Error
 	return logs, err
 }
 
