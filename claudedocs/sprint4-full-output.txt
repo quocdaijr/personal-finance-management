@@ -1,0 +1,12 @@
+
+=========================================
+SPRINT 4 API TESTING
+=========================================
+Backend: http://localhost:8080
+Analytics: http://localhost:8000
+
+=========================================
+1. HEALTH CHECKS
+=========================================
+Checking backend health...
+[0;32m✓ PASS[0m: Backend health check

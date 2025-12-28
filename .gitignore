@@ -1,4 +1,3 @@
-```gitignore
 # Binaries
 /backend/bin/
 /analytics/__pycache__/
@@ -14,10 +13,12 @@ Thumbs.db
 # IDE and Editor files
 .vscode/
 .idea/
-```
-docker-compose.yml
 
+# Docker
+docker-compose.yml
 docker/
+
+# AI Assistant Rules
 .clinerules/byterover-rules.md
 .kilocode/rules/byterover-rules.md
 .roo/rules/byterover-rules.md
@@ -26,3 +27,21 @@ docker/
 .kiro/steering/byterover-rules.md
 .qoder/rules/byterover-rules.md
 .augment/rules/byterover-rules.md
+
+# MCP Servers (temporary state)
+.playwright-mcp/
+.serena/
+
+# Environment files
+.env
+.env.local
+frontend/.env
+
+# Database files (development)
+*.db
+*.db-journal
+
+# Temporary files
+*.py~
+*.sql~
+*.js~
