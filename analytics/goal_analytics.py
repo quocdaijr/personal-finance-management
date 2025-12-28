@@ -7,7 +7,7 @@ import pandas as pd
 import numpy as np
 from sqlalchemy import text
 from sqlalchemy.orm import Session
-from database import load_data_to_dataframe
+from database import load_data_to_dataframe, USE_SQLITE
 
 
 class GoalAnalytics:
@@ -307,8 +307,15 @@ class GoalAnalytics:
         })
 
         # Get user's average monthly income for affordability check
-        # Using DATE_TRUNC for PostgreSQL compatibility (also works in modern SQLite)
-        income_query = text("""
+        # Use database-specific date grouping function
+        if USE_SQLITE:
+            # SQLite uses strftime for date formatting
+            date_group_function = "strftime('%Y-%m', date)"
+        else:
+            # PostgreSQL uses DATE_TRUNC
+            date_group_function = "DATE_TRUNC('month', date)"
+
+        income_query = text(f"""
         SELECT AVG(monthly_income) as avg_income
         FROM (
             SELECT SUM(amount) as monthly_income
@@ -316,7 +323,7 @@ class GoalAnalytics:
             WHERE user_id = :user_id
                 AND type = 'income'
                 AND date >= :start_date
-            GROUP BY DATE_TRUNC('month', date)
+            GROUP BY {date_group_function}
         ) AS monthly_totals
         """)
 

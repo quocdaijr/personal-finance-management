@@ -45,7 +45,7 @@ type HouseholdMemberRequest struct {
 	Relationship       string  `json:"relationship" binding:"required,oneof=parent child spouse other"`
 	IsDependent        bool    `json:"is_dependent"`
 	AllowanceAmount    float64 `json:"allowance_amount"`
-	AllowanceFrequency string  `json:"allowance_frequency" binding:"omitempty,oneof=weekly monthly"`
+	AllowanceFrequency string  `json:"allowance_frequency" binding:"omitempty,oneof=daily weekly monthly yearly"`
 }
 
 // HouseholdResponse represents the response for a household

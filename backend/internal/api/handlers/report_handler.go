@@ -65,9 +65,19 @@ func (h *ReportHandler) GetReport(c *gin.Context) {
 		return
 	}
 
-	userID, _ := c.Get("user_id")
+	userIDInterface, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
 
-	report, err := h.reportService.GetReport(uint(id), userID.(uint))
+	userID, ok := userIDInterface.(uint)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user ID format"})
+		return
+	}
+
+	report, err := h.reportService.GetReport(uint(id), userID)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Report not found"})
 		return
@@ -85,12 +95,31 @@ func (h *ReportHandler) GetReport(c *gin.Context) {
 // @Success 200 {object} models.ReportListResponse
 // @Router /api/reports [get]
 func (h *ReportHandler) ListReports(c *gin.Context) {
-	userID, _ := c.Get("user_id")
+	userIDInterface, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
 
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
+	userID, ok := userIDInterface.(uint)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user ID format"})
+		return
+	}
 
-	response, err := h.reportService.ListReports(userID.(uint), page, pageSize)
+	page, err := strconv.Atoi(c.DefaultQuery("page", "1"))
+	if err != nil || page < 1 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid page number"})
+		return
+	}
+
+	pageSize, err := strconv.Atoi(c.DefaultQuery("page_size", "20"))
+	if err != nil || pageSize < 1 || pageSize > 100 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid page size (must be 1-100)"})
+		return
+	}
+
+	response, err := h.reportService.ListReports(userID, page, pageSize)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -121,9 +150,19 @@ func (h *ReportHandler) UpdateReport(c *gin.Context) {
 		return
 	}
 
-	userID, _ := c.Get("user_id")
+	userIDInterface, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
 
-	report, err := h.reportService.UpdateReport(uint(id), userID.(uint), &req)
+	userID, ok := userIDInterface.(uint)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user ID format"})
+		return
+	}
+
+	report, err := h.reportService.UpdateReport(uint(id), userID, &req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -145,9 +184,19 @@ func (h *ReportHandler) DeleteReport(c *gin.Context) {
 		return
 	}
 
-	userID, _ := c.Get("user_id")
+	userIDInterface, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
 
-	err = h.reportService.DeleteReport(uint(id), userID.(uint))
+	userID, ok := userIDInterface.(uint)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user ID format"})
+		return
+	}
+
+	err = h.reportService.DeleteReport(uint(id), userID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -178,9 +227,26 @@ func (h *ReportHandler) GenerateReport(c *gin.Context) {
 		return
 	}
 
-	userID, _ := c.Get("user_id")
+	// Validate format parameter
+	validFormats := map[string]bool{"pdf": true, "excel": true, "csv": true, "json": true}
+	if req.Format != "" && !validFormats[req.Format] {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid format. Allowed: pdf, excel, csv, json"})
+		return
+	}
 
-	execution, err := h.reportService.GenerateReport(uint(id), userID.(uint), req.Format)
+	userIDInterface, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+
+	userID, ok := userIDInterface.(uint)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user ID format"})
+		return
+	}
+
+	execution, err := h.reportService.GenerateReport(uint(id), userID, req.Format)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

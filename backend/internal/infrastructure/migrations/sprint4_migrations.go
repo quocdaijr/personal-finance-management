@@ -10,26 +10,18 @@ import (
 func RunSprint4Migrations(db *gorm.DB) error {
 	log.Println("Running Sprint 4 migrations...")
 
-	// Auto-migrate new tables
+	// Auto-migrate new tables and update existing tables with new columns
+	// AutoMigrate will automatically add missing columns with proper constraints and indexes
 	err := db.AutoMigrate(
 		&models.Report{},
 		&models.ReportExecution{},
 		&models.TaxCategory{},
+		&models.Transaction{}, // Include Transaction to ensure tax_category_id column is added with proper constraints
 	)
 
 	if err != nil {
 		log.Printf("Error running Sprint 4 migrations: %v", err)
 		return err
-	}
-
-	// Add tax_category_id column to transactions table if it doesn't exist
-	if !db.Migrator().HasColumn(&models.Transaction{}, "tax_category_id") {
-		err = db.Migrator().AddColumn(&models.Transaction{}, "tax_category_id")
-		if err != nil {
-			log.Printf("Error adding tax_category_id column: %v", err)
-			return err
-		}
-		log.Println("✓ Added tax_category_id column to transactions table")
 	}
 
 	log.Println("✓ Sprint 4 migrations completed successfully")

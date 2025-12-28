@@ -125,7 +125,7 @@ func (s *HouseholdService) AddMember(householdID, adderID uint, req *models.Hous
 	}
 
 	// Validate allowance amount (must be non-negative)
-	if req.AllowanceAmount != nil && *req.AllowanceAmount < 0 {
+	if req.AllowanceAmount < 0 {
 		return nil, errors.New("allowance amount must be non-negative")
 	}
 
