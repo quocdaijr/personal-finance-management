@@ -2,19 +2,19 @@
 Goal Analytics Module - Financial goal achievement analytics and predictions
 """
 from datetime import datetime, timedelta
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any
 import pandas as pd
 import numpy as np
 from sqlalchemy import text
-from sqlalchemy.orm import Session
 from database import load_data_to_dataframe, USE_SQLITE
 
 
 class GoalAnalytics:
     """Analytics for financial goals"""
 
-    def __init__(self, db: Session):
-        self.db = db
+    def __init__(self):
+        """Initialize GoalAnalytics. Uses module-level database engine for queries."""
+        pass
 
     def calculate_achievement_probability(
         self,
