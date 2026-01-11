@@ -49,6 +49,15 @@ func (r *UserRoleRepository) GetByAccountID(accountID uint) ([]models.UserRole, 
 	return userRoles, err
 }
 
+// GetByUserAndAccount gets role assignments for a user in an account
+func (r *UserRoleRepository) GetByUserAndAccount(userID, accountID uint) ([]models.UserRole, error) {
+	var userRoles []models.UserRole
+	err := r.db.Preload("Role").
+		Where("user_id = ? AND account_id = ?", userID, accountID).
+		Find(&userRoles).Error
+	return userRoles, err
+}
+
 // Update updates a user role assignment
 func (r *UserRoleRepository) Update(userRole *models.UserRole) error {
 	if userRole == nil {

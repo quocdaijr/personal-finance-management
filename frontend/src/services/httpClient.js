@@ -7,7 +7,7 @@ import { API_CONFIG } from '../config/api';
 import { keysToCamel, keysToSnake } from '../utils/caseTransform';
 
 // API URLs from centralized config
-const BACKEND_URL = `${API_CONFIG.BASE_URL}/api`;
+const BACKEND_URL = `${API_CONFIG.BASE_URL}/api/v1`;
 const ANALYTICS_URL = `${API_CONFIG.ANALYTICS_URL}/api`;
 
 /**
@@ -20,10 +20,10 @@ const getAuthHeaders = (isAnalytics = false) => {
     'Content-Type': 'application/json'
   };
 
-  // Get the appropriate token - use 'token' to match AuthContext
+  // Get the appropriate token
   const token = isAnalytics
     ? localStorage.getItem('analytics_token')
-    : localStorage.getItem('token');
+    : localStorage.getItem('auth_token');
 
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;

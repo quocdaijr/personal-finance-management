@@ -53,14 +53,14 @@ interface AuthProviderProps {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // API base URL from centralized config
-const API_URL = `${API_CONFIG.BASE_URL}/api`;
+const API_URL = `${API_CONFIG.BASE_URL}/api/v1`;
 
 // Create a provider component
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [state, setState] = useState<AuthState>(() => {
     // Initialize from localStorage synchronously to prevent flash
-    const token = localStorage.getItem('token');
-    const refreshToken = localStorage.getItem('refreshToken');
+    const token = localStorage.getItem('auth_token');
+    const refreshToken = localStorage.getItem('refresh_token');
     const userStr = localStorage.getItem('user');
 
     if (token && refreshToken && userStr) {
@@ -79,8 +79,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         };
       } catch {
         // Invalid user data, clear storage
-        localStorage.removeItem('token');
-        localStorage.removeItem('refreshToken');
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('refresh_token');
         localStorage.removeItem('user');
       }
     }
@@ -112,9 +112,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       const { access_token, refresh_token, analytics_token, user } = response.data;
 
-      // Store in localStorage
-      localStorage.setItem('token', access_token);
-      localStorage.setItem('refreshToken', refresh_token);
+      // Store in localStorage with keys that httpClient expects
+      localStorage.setItem('auth_token', access_token);
+      localStorage.setItem('refresh_token', refresh_token);
       localStorage.setItem('user', JSON.stringify(user));
 
       // Store analytics token for analytics API calls
@@ -186,9 +186,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       const { access_token, refresh_token, analytics_token, user } = response.data;
 
-      // Store in localStorage
-      localStorage.setItem('token', access_token);
-      localStorage.setItem('refreshToken', refresh_token);
+      // Store in localStorage with keys that httpClient expects
+      localStorage.setItem('auth_token', access_token);
+      localStorage.setItem('refresh_token', refresh_token);
       localStorage.setItem('user', JSON.stringify(user));
 
       // Store analytics token for analytics API calls
@@ -221,7 +221,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   // Refresh token function
   const refreshAuth = useCallback(async (): Promise<boolean> => {
-    const currentRefreshToken = localStorage.getItem('refreshToken');
+    const currentRefreshToken = localStorage.getItem('refresh_token');
     if (!currentRefreshToken || isRefreshing.current) return false;
 
     isRefreshing.current = true;
@@ -233,9 +233,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       const { access_token, refresh_token, analytics_token, user } = response.data;
 
-      // Store in localStorage
-      localStorage.setItem('token', access_token);
-      localStorage.setItem('refreshToken', refresh_token);
+      // Store in localStorage with keys that httpClient expects
+      localStorage.setItem('auth_token', access_token);
+      localStorage.setItem('refresh_token', refresh_token);
       localStorage.setItem('user', JSON.stringify(user));
 
       // Store analytics token for analytics API calls
@@ -266,8 +266,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Logout function
   const logout = useCallback(() => {
     // Remove from localStorage
-    localStorage.removeItem('token');
-    localStorage.removeItem('refreshToken');
+    localStorage.removeItem('auth_token');
+    localStorage.removeItem('refresh_token');
     localStorage.removeItem('user');
     localStorage.removeItem('analytics_token');
 

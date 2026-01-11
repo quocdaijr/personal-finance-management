@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/quocdaijr/finance-management-backend/internal/domain/models"
 	"github.com/quocdaijr/finance-management-backend/internal/domain/services"
+	"github.com/quocdaijr/finance-management-backend/internal/utils"
 )
 
 // SharingHandler handles account sharing-related HTTP requests
@@ -31,7 +32,7 @@ func NewSharingHandler(sharingService *services.SharingService) *SharingHandler 
 // @Success 201 {object} models.InvitationResponse
 // @Router /api/accounts/{accountId}/invitations [post]
 func (h *SharingHandler) InviteUser(c *gin.Context) {
-	accountID, err := strconv.ParseUint(c.Param("accountId"), 10, 32)
+	accountID, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid account ID"})
 		return
@@ -43,13 +44,13 @@ func (h *SharingHandler) InviteUser(c *gin.Context) {
 		return
 	}
 
-	userID, err := getUserID(c)
+	userID, err := utils.GetUserIDFromContext(c)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
 
-	invitation, err := h.sharingService.InviteUser(uint(accountID), userID, &req)
+	invitation, err := h.sharingService.InviteUserToAccount(uint(accountID), userID, &req)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -65,7 +66,7 @@ func (h *SharingHandler) InviteUser(c *gin.Context) {
 // @Success 200 {array} models.InvitationResponse
 // @Router /api/invitations [get]
 func (h *SharingHandler) GetInvitations(c *gin.Context) {
-	userID, err := getUserID(c)
+	userID, err := utils.GetUserIDFromContext(c)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
@@ -93,19 +94,19 @@ func (h *SharingHandler) AcceptInvitation(c *gin.Context) {
 		return
 	}
 
-	userID, err := getUserID(c)
+	userID, err := utils.GetUserIDFromContext(c)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
 
-	err = h.sharingService.AcceptInvitation(uint(invitationID), userID)
+	member, err := h.sharingService.AcceptInvitationByID(uint(invitationID), userID)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Invitation accepted successfully"})
+	c.JSON(http.StatusOK, gin.H{"message": "Invitation accepted successfully", "member": member})
 }
 
 // RejectInvitation rejects an account invitation
@@ -121,13 +122,13 @@ func (h *SharingHandler) RejectInvitation(c *gin.Context) {
 		return
 	}
 
-	userID, err := getUserID(c)
+	userID, err := utils.GetUserIDFromContext(c)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
 
-	err = h.sharingService.RejectInvitation(uint(invitationID), userID)
+	err = h.sharingService.RejectInvitationByID(uint(invitationID), userID)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -144,13 +145,13 @@ func (h *SharingHandler) RejectInvitation(c *gin.Context) {
 // @Success 200 {array} models.AccountMemberResponse
 // @Router /api/accounts/{accountId}/members [get]
 func (h *SharingHandler) GetAccountMembers(c *gin.Context) {
-	accountID, err := strconv.ParseUint(c.Param("accountId"), 10, 32)
+	accountID, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid account ID"})
 		return
 	}
 
-	userID, err := getUserID(c)
+	userID, err := utils.GetUserIDFromContext(c)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
@@ -176,7 +177,7 @@ func (h *SharingHandler) GetAccountMembers(c *gin.Context) {
 // @Success 200 {object} map[string]string
 // @Router /api/accounts/{accountId}/members/{memberId}/role [put]
 func (h *SharingHandler) UpdateMemberRole(c *gin.Context) {
-	accountID, err := strconv.ParseUint(c.Param("accountId"), 10, 32)
+	accountID, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid account ID"})
 		return
@@ -194,7 +195,7 @@ func (h *SharingHandler) UpdateMemberRole(c *gin.Context) {
 		return
 	}
 
-	userID, err := getUserID(c)
+	userID, err := utils.GetUserIDFromContext(c)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
@@ -217,7 +218,7 @@ func (h *SharingHandler) UpdateMemberRole(c *gin.Context) {
 // @Success 200 {object} map[string]string
 // @Router /api/accounts/{accountId}/members/{memberId} [delete]
 func (h *SharingHandler) RemoveMember(c *gin.Context) {
-	accountID, err := strconv.ParseUint(c.Param("accountId"), 10, 32)
+	accountID, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid account ID"})
 		return
@@ -229,7 +230,7 @@ func (h *SharingHandler) RemoveMember(c *gin.Context) {
 		return
 	}
 
-	userID, err := getUserID(c)
+	userID, err := utils.GetUserIDFromContext(c)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return

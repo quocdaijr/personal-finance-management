@@ -54,6 +54,16 @@ func (r *InvitationRepository) GetByAccount(accountID uint) ([]models.Invitation
 	return invitations, err
 }
 
+// GetByEmail gets all invitations for an email
+func (r *InvitationRepository) GetByEmail(email string) ([]models.Invitation, error) {
+	var invitations []models.Invitation
+	err := r.db.Preload("Account").Preload("Inviter").
+		Where("email = ?", email).
+		Order("created_at DESC").
+		Find(&invitations).Error
+	return invitations, err
+}
+
 // GetPendingByEmail gets pending invitations for an email
 func (r *InvitationRepository) GetPendingByEmail(email string) ([]models.Invitation, error) {
 	var invitations []models.Invitation

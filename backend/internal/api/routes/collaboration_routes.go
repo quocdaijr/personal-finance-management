@@ -27,13 +27,13 @@ func SetupCollaborationRoutes(api *gin.RouterGroup, rc *RouterConfig) {
 	accounts := protected.Group("/accounts")
 	{
 		// Account member management
-		accounts.POST("/:accountId/invitations", rc.SharingHandler.InviteUser)
-		accounts.GET("/:accountId/members", rc.SharingHandler.GetAccountMembers)
-		accounts.PUT("/:accountId/members/:memberId/role", rc.SharingHandler.UpdateMemberRole)
-		accounts.DELETE("/:accountId/members/:memberId", rc.SharingHandler.RemoveMember)
+		accounts.POST("/:id/invitations", rc.SharingHandler.InviteUser)
+		accounts.GET("/:id/members", rc.SharingHandler.GetAccountMembers)
+		accounts.PUT("/:id/members/:memberId/role", rc.SharingHandler.UpdateMemberRole)
+		accounts.DELETE("/:id/members/:memberId", rc.SharingHandler.RemoveMember)
 
 		// Activity log
-		accounts.GET("/:accountId/activity", rc.CollaborationHandler.GetActivityLog)
+		accounts.GET("/:id/activity", rc.CollaborationHandler.GetActivityLog)
 	}
 
 	// Invitation routes
@@ -48,11 +48,11 @@ func SetupCollaborationRoutes(api *gin.RouterGroup, rc *RouterConfig) {
 	transactions := protected.Group("/transactions")
 	{
 		// Comments
-		transactions.POST("/:transactionId/comments", rc.CollaborationHandler.AddComment)
-		transactions.GET("/:transactionId/comments", rc.CollaborationHandler.GetComments)
+		transactions.POST("/:id/comments", rc.CollaborationHandler.AddComment)
+		transactions.GET("/:id/comments", rc.CollaborationHandler.GetComments)
 
 		// Approval workflows
-		transactions.POST("/:transactionId/approval", rc.CollaborationHandler.RequestApproval)
+		transactions.POST("/:id/approval", rc.CollaborationHandler.RequestApproval)
 	}
 
 	// Comment routes

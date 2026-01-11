@@ -109,6 +109,17 @@ func (s *SharingService) InviteUserToAccount(accountID, inviterID uint, req *mod
 	return invitation, nil
 }
 
+// AcceptInvitationByID accepts an invitation by ID
+func (s *SharingService) AcceptInvitationByID(invitationID, userID uint) (*models.AccountMember, error) {
+	// Get invitation
+	invitation, err := s.invitationRepo.GetByID(invitationID)
+	if err != nil {
+		return nil, errors.New("invitation not found")
+	}
+
+	return s.AcceptInvitation(invitation.Token, userID)
+}
+
 // AcceptInvitation accepts an invitation to join an account
 func (s *SharingService) AcceptInvitation(token string, userID uint) (*models.AccountMember, error) {
 	// Get invitation
@@ -165,6 +176,79 @@ func (s *SharingService) AcceptInvitation(token string, userID uint) (*models.Ac
 	s.logActivity(invitation.AccountID, userID, "accepted_invitation", "account_member", member.ID, nil)
 
 	return member, nil
+}
+
+// GetInvitations gets all pending invitations for a user
+func (s *SharingService) GetInvitations(userID uint) ([]models.InvitationResponse, error) {
+	// Get user to find their email
+	user, err := s.userRepo.GetByID(userID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Get pending invitations by email
+	invitations, err := s.invitationRepo.GetByEmail(user.Email)
+	if err != nil {
+		return nil, err
+	}
+
+	// Filter for pending invitations only
+	var responses []models.InvitationResponse
+	for _, inv := range invitations {
+		if inv.Status == "pending" && inv.IsValid() {
+			responses = append(responses, models.InvitationResponse{
+				ID:        inv.ID,
+				AccountID: inv.AccountID,
+				Email:     inv.Email,
+				Role:      inv.Role,
+				Status:    inv.Status,
+				ExpiresAt: inv.ExpiresAt,
+				CreatedAt: inv.CreatedAt,
+			})
+		}
+	}
+
+	return responses, nil
+}
+
+// RejectInvitationByID rejects an invitation by ID
+func (s *SharingService) RejectInvitationByID(invitationID, userID uint) error {
+	// Get invitation
+	invitation, err := s.invitationRepo.GetByID(invitationID)
+	if err != nil {
+		return errors.New("invitation not found")
+	}
+
+	return s.RejectInvitation(invitation.Token, userID)
+}
+
+// RejectInvitation rejects an invitation
+func (s *SharingService) RejectInvitation(token string, userID uint) error {
+	// Get invitation
+	invitation, err := s.invitationRepo.GetByToken(token)
+	if err != nil {
+		return errors.New("invalid invitation token")
+	}
+
+	// Check if user's email matches invitation
+	user, err := s.userRepo.GetByID(userID)
+	if err != nil {
+		return err
+	}
+	if user.Email != invitation.Email {
+		return errors.New("invitation was sent to a different email address")
+	}
+
+	// Update invitation status
+	invitation.Status = "rejected"
+	if err := s.invitationRepo.Update(invitation); err != nil {
+		return errors.New("failed to reject invitation")
+	}
+
+	// Log activity
+	s.logActivity(invitation.AccountID, userID, "rejected_invitation", "invitation", invitation.ID, nil)
+
+	return nil
 }
 
 // GetAccountMembers gets all members of an account

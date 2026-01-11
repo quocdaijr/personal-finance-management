@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/quocdaijr/finance-management-backend/internal/domain/models"
 	"github.com/quocdaijr/finance-management-backend/internal/domain/services"
+	"github.com/quocdaijr/finance-management-backend/internal/utils"
 )
 
 // HouseholdHandler handles household-related HTTP requests
@@ -36,7 +37,7 @@ func (h *HouseholdHandler) CreateHousehold(c *gin.Context) {
 		return
 	}
 
-	userID, err := getUserID(c)
+	userID, err := utils.GetUserIDFromContext(c)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
@@ -58,7 +59,7 @@ func (h *HouseholdHandler) CreateHousehold(c *gin.Context) {
 // @Success 200 {array} models.HouseholdResponse
 // @Router /api/households [get]
 func (h *HouseholdHandler) GetHouseholds(c *gin.Context) {
-	userID, err := getUserID(c)
+	userID, err := utils.GetUserIDFromContext(c)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
@@ -87,7 +88,7 @@ func (h *HouseholdHandler) GetHousehold(c *gin.Context) {
 		return
 	}
 
-	userID, err := getUserID(c)
+	userID, err := utils.GetUserIDFromContext(c)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
@@ -124,7 +125,7 @@ func (h *HouseholdHandler) AddMember(c *gin.Context) {
 		return
 	}
 
-	userID, err := getUserID(c)
+	userID, err := utils.GetUserIDFromContext(c)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
@@ -168,13 +169,13 @@ func (h *HouseholdHandler) UpdateAllowance(c *gin.Context) {
 		return
 	}
 
-	userID, err := getUserID(c)
+	userID, err := utils.GetUserIDFromContext(c)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
 
-	err = h.householdService.UpdateAllowance(uint(householdID), uint(memberID), userID, req.Amount, req.Frequency)
+	err = h.householdService.UpdateAllowance(uint(householdID), uint(memberID), userID, req.AllowanceAmount, req.AllowanceFrequency)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -203,7 +204,7 @@ func (h *HouseholdHandler) RemoveMember(c *gin.Context) {
 		return
 	}
 
-	userID, err := getUserID(c)
+	userID, err := utils.GetUserIDFromContext(c)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
@@ -232,7 +233,7 @@ func (h *HouseholdHandler) GetHouseholdBudgets(c *gin.Context) {
 		return
 	}
 
-	userID, err := getUserID(c)
+	userID, err := utils.GetUserIDFromContext(c)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
@@ -261,7 +262,7 @@ func (h *HouseholdHandler) GetHouseholdGoals(c *gin.Context) {
 		return
 	}
 
-	userID, err := getUserID(c)
+	userID, err := utils.GetUserIDFromContext(c)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return

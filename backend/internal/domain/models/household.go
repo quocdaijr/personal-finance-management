@@ -48,6 +48,12 @@ type HouseholdMemberRequest struct {
 	AllowanceFrequency string  `json:"allowance_frequency" binding:"omitempty,oneof=daily weekly monthly yearly"`
 }
 
+// UpdateAllowanceRequest represents a request to update a member's allowance
+type UpdateAllowanceRequest struct {
+	AllowanceAmount    float64 `json:"allowance_amount" binding:"required,min=0"`
+	AllowanceFrequency string  `json:"allowance_frequency" binding:"required,oneof=daily weekly monthly yearly"`
+}
+
 // HouseholdResponse represents the response for a household
 type HouseholdResponse struct {
 	ID        uint                        `json:"id"`

@@ -73,6 +73,11 @@ type RoleRequest struct {
 	Permissions RolePermissions `json:"permissions" binding:"required"`
 }
 
+// UpdateRoleRequest represents a request to update a user's role assignment
+type UpdateRoleRequest struct {
+	Role string `json:"role" binding:"required,oneof=owner admin editor viewer"`
+}
+
 // RoleResponse represents the response for a role
 type RoleResponse struct {
 	ID           uint            `json:"id"`

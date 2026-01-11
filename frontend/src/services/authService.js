@@ -21,9 +21,9 @@ const authService = {
         password
       });
 
-      // Gin typically returns tokens in this format
-      if (response.token) {
-        localStorage.setItem('auth_token', response.token);
+      // Store access token (backend returns access_token)
+      if (response.access_token || response.token) {
+        localStorage.setItem('auth_token', response.access_token || response.token);
 
         // Store refresh token if provided
         if (response.refresh_token) {
@@ -137,9 +137,9 @@ const authService = {
         refresh_token: refreshToken
       });
 
-      // Gin typically returns the new token in this format
-      if (response.token) {
-        localStorage.setItem('auth_token', response.token);
+      // Store new access token (backend returns access_token)
+      if (response.access_token || response.token) {
+        localStorage.setItem('auth_token', response.access_token || response.token);
 
         // Update refresh token if provided
         if (response.refresh_token) {

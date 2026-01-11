@@ -121,6 +121,30 @@ func (s *CollaborationService) GetComments(transactionID, userID uint) ([]models
 	return responses, nil
 }
 
+// DeleteComment deletes a comment
+func (s *CollaborationService) DeleteComment(commentID, userID uint) error {
+	// Get the comment to check ownership
+	comment, err := s.commentRepo.GetByID(commentID)
+	if err != nil {
+		return errors.New("comment not found")
+	}
+
+	// Check if user is the comment owner
+	if comment.UserID != userID {
+		return errors.New("you can only delete your own comments")
+	}
+
+	// Delete the comment
+	if err := s.commentRepo.Delete(commentID); err != nil {
+		return errors.New("failed to delete comment")
+	}
+
+	// Log activity
+	s.logActivity(comment.TransactionID, userID, "delete", "comment", commentID, nil)
+
+	return nil
+}
+
 // GetActivityLog gets activity log for an account
 func (s *CollaborationService) GetActivityLog(accountID, userID uint, limit int) ([]models.ActivityLogResponse, error) {
 	// Check if user has access to the account

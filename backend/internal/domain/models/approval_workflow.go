@@ -39,6 +39,11 @@ type ApprovalActionRequest struct {
 	Reason string `json:"reason"` // Required for rejection
 }
 
+// RejectionRequest represents a request to reject an approval
+type RejectionRequest struct {
+	Reason string `json:"reason" binding:"required"`
+}
+
 // ApprovalWorkflowResponse represents the response for an approval workflow
 type ApprovalWorkflowResponse struct {
 	ID              uint       `json:"id"`

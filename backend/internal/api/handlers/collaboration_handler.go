@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/quocdaijr/finance-management-backend/internal/domain/models"
 	"github.com/quocdaijr/finance-management-backend/internal/domain/services"
+	"github.com/quocdaijr/finance-management-backend/internal/utils"
 )
 
 // CollaborationHandler handles collaboration-related HTTP requests
@@ -31,7 +32,7 @@ func NewCollaborationHandler(collaborationService *services.CollaborationService
 // @Success 201 {object} models.Comment
 // @Router /api/transactions/{transactionId}/comments [post]
 func (h *CollaborationHandler) AddComment(c *gin.Context) {
-	transactionID, err := strconv.ParseUint(c.Param("transactionId"), 10, 32)
+	transactionID, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid transaction ID"})
 		return
@@ -43,7 +44,7 @@ func (h *CollaborationHandler) AddComment(c *gin.Context) {
 		return
 	}
 
-	userID, err := getUserID(c)
+	userID, err := utils.GetUserIDFromContext(c)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
@@ -66,13 +67,13 @@ func (h *CollaborationHandler) AddComment(c *gin.Context) {
 // @Success 200 {array} models.CommentResponse
 // @Router /api/transactions/{transactionId}/comments [get]
 func (h *CollaborationHandler) GetComments(c *gin.Context) {
-	transactionID, err := strconv.ParseUint(c.Param("transactionId"), 10, 32)
+	transactionID, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid transaction ID"})
 		return
 	}
 
-	userID, err := getUserID(c)
+	userID, err := utils.GetUserIDFromContext(c)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
@@ -100,7 +101,7 @@ func (h *CollaborationHandler) DeleteComment(c *gin.Context) {
 		return
 	}
 
-	userID, err := getUserID(c)
+	userID, err := utils.GetUserIDFromContext(c)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
@@ -125,7 +126,7 @@ func (h *CollaborationHandler) DeleteComment(c *gin.Context) {
 // @Success 201 {object} models.ApprovalWorkflow
 // @Router /api/transactions/{transactionId}/approval [post]
 func (h *CollaborationHandler) RequestApproval(c *gin.Context) {
-	transactionID, err := strconv.ParseUint(c.Param("transactionId"), 10, 32)
+	transactionID, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid transaction ID"})
 		return
@@ -137,7 +138,7 @@ func (h *CollaborationHandler) RequestApproval(c *gin.Context) {
 		return
 	}
 
-	userID, err := getUserID(c)
+	userID, err := utils.GetUserIDFromContext(c)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
@@ -165,7 +166,7 @@ func (h *CollaborationHandler) ApproveTransaction(c *gin.Context) {
 		return
 	}
 
-	userID, err := getUserID(c)
+	userID, err := utils.GetUserIDFromContext(c)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
@@ -202,7 +203,7 @@ func (h *CollaborationHandler) RejectTransaction(c *gin.Context) {
 		return
 	}
 
-	userID, err := getUserID(c)
+	userID, err := utils.GetUserIDFromContext(c)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
@@ -225,19 +226,27 @@ func (h *CollaborationHandler) RejectTransaction(c *gin.Context) {
 // @Success 200 {array} models.ActivityLogResponse
 // @Router /api/accounts/{accountId}/activity [get]
 func (h *CollaborationHandler) GetActivityLog(c *gin.Context) {
-	accountID, err := strconv.ParseUint(c.Param("accountId"), 10, 32)
+	accountID, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid account ID"})
 		return
 	}
 
-	userID, err := getUserID(c)
+	userID, err := utils.GetUserIDFromContext(c)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
 
-	activities, err := h.collaborationService.GetActivityLog(uint(accountID), userID)
+	// Get limit from query parameter, default to 50
+	limit := 50
+	if limitStr := c.Query("limit"); limitStr != "" {
+		if parsedLimit, err := strconv.Atoi(limitStr); err == nil && parsedLimit > 0 {
+			limit = parsedLimit
+		}
+	}
+
+	activities, err := h.collaborationService.GetActivityLog(uint(accountID), userID, limit)
 	if err != nil {
 		c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
 		return
